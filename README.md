@@ -22,6 +22,7 @@ node test.js
 | `charts.js`  | Dynamic SVG renderers (soul star, ranks, bands, scales, pillars, life path, mandala, compass, music, pyramid) |
 | `test.js`    | Node test suite (47 assertions) |
 | `tests.html` | Same tests, in-browser |
+| `vendor/`    | jsPDF + html2canvas (bundled locally) for one-click PDF export |
 
 ## The method
 
