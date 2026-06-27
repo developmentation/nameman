@@ -412,6 +412,34 @@
     return { closeness: closeness, correlation: r, angleDelta: ad, shared: shared };
   }
 
+  // ---- Letter influence (leave-one-out sensitivity) -----------------
+  // For each A-Z letter in the name, recompute the profile WITHOUT it and
+  // report each digit's contribution = base.score - without.score, plus a
+  // magnitude (sum of absolute contributions). Shows which letters shape you.
+  function letterInfluence(name) {
+    var base = analyze(name);
+    var chars = String(name).split('');
+    var letters = [];
+    for (var i = 0; i < chars.length; i++) {
+      var v = chars[i].toUpperCase().charCodeAt(0) - 64;
+      if (v < 1 || v > 26) continue;
+      var without = chars.slice(0, i).concat(chars.slice(i + 1)).join('');
+      var a = analyze(without);
+      var deltas = base.scores.map(function (s, d) { return s - a.scores[d]; });
+      var mag = deltas.reduce(function (t, x) { return t + Math.abs(x); }, 0);
+      letters.push({ char: chars[i].toUpperCase(), index: i, value: v, deltas: deltas, magnitude: mag });
+    }
+    return { base: base.scores, letters: letters };
+  }
+
+  // talent mix (10 kernel-weighted values) at a given age, using the
+  // birth-normalised kernel. age 0..90 sweeps the year-ring from birth.
+  function talentsAtAge(result, age) {
+    var mult = timeMult(result.numString, result.angle, result.values);
+    var ring = (Math.round(age) + result.angle) % 365;
+    return timeSizesAt(result.numString, ring, mult);
+  }
+
   /* ----------------------------------------------------------------
    * EVOLUTION / "Future Development" pillar series.  Faithful to the two
    * the two evolution charts:
@@ -521,6 +549,7 @@
     arctan: arctan, calcCenter: calcCenter, dateAngle: dateAngle,
     quadrant: quadrant, kernelWeight: kernelWeight,
     analyze: analyze, evolution: evolution, compare: compare, reading: reading,
+    letterInfluence: letterInfluence, talentsAtAge: talentsAtAge,
     DIGIT_BAND: DIGIT_BAND,
     SPOKE_DIGIT: SPOKE_DIGIT, COLORS: COLORS,
     DIGIT_COLORS: DIGIT_COLORS, SPOKE_COLORS: SPOKE_COLORS,

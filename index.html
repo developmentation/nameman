@@ -101,6 +101,20 @@
   .credit{margin-top:26px;padding-top:16px;border-top:1px solid var(--line);
           color:var(--muted);font-size:12px;text-align:center;line-height:1.7}
   .credit b{color:var(--ink);letter-spacing:1px}
+  .letters{display:flex;flex-wrap:wrap;gap:6px}
+  .lchip{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:34px;padding:0 9px;
+    border-radius:8px;font-weight:700;font-size:16px;cursor:pointer;border:2px solid transparent;user-select:none}
+  .lchip.on{border-color:var(--ink);box-shadow:0 0 0 2px var(--accent)}
+  .infl{margin:0;padding-left:20px}.infl li{margin:3px 0}
+  .agebar{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+  .agebar input[type=range]{flex:1 1 240px;accent-color:var(--accent);height:26px}
+  .ageval{font-size:13px}
+  .notes{display:flex;flex-wrap:wrap;gap:6px}
+  .nchip{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;
+    width:34px;height:40px;border-radius:8px;font-weight:700;font-size:15px;border:1px solid rgba(0,0,0,.25);
+    transition:transform .08s ease,box-shadow .08s ease}
+  .nchip small{font-size:8px;font-weight:600;opacity:.75}
+  .nchip.lit{transform:translateY(-4px) scale(1.14);box-shadow:0 5px 16px rgba(120,80,255,.6);outline:2px solid #fff}
   .scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .triangle{overflow-x:auto}
   @media(max-width:600px){
@@ -215,6 +229,9 @@
           <div class="tab" :class="{on:tab==='compass'}" @click="tab='compass'">Soul Compass</div>
           <div class="tab" :class="{on:tab==='pyramid'}" @click="tab='pyramid'">Pyramid Explainer</div>
           <div class="tab" :class="{on:tab==='music'}" @click="tab='music'">Music &amp; Stars</div>
+          <div class="tab" :class="{on:tab==='letters'}" @click="tab='letters'">Letter Influence</div>
+          <div class="tab" :class="{on:tab==='age'}" @click="tab='age'">Age Explorer</div>
+          <div class="tab" :class="{on:tab==='sound'}" @click="tab='sound'">Hear Your Name</div>
           <div class="tab" :class="{on:tab==='compat'}" @click="tab='compat'">Compatibility</div>
           <div class="tab" :class="{on:tab==='traits'}" @click="tab='traits'">Loves &amp; Powers</div>
           <div class="tab" :class="{on:tab==='tri'}" @click="tab='tri'">Numerology Triangle</div>
@@ -223,6 +240,56 @@
         <div v-show="tab==='reading'">
           <p class="hint">A written interpretation of your name, covering your Soular System, Forces and Feelings, and magnetic direction.</p>
           <div class="reading" v-html="charts.reading"></div>
+        </div>
+
+        <div v-show="tab==='letters'" v-if="influence && influence.letters.length">
+          <p class="hint">Every letter pulls your profile a little. Tap a letter to see how much it adds to
+             (or holds back) each talent. Brighter letters shape you more.</p>
+          <div class="letters">
+            <span v-for="(L,i) in influence.letters" :key="i"
+                  class="lchip" :class="{on:i===selLetter}"
+                  :style="{background:heat(L.magnitude), color: L.magnitude>maxMag*0.5 ? '#0a0a14':'var(--ink)'}"
+                  @click="selectLetter(i)">{{ L.char }}</span>
+          </div>
+          <div class="grid" style="margin-top:10px">
+            <div>
+              <div style="font-size:13px;margin-bottom:6px">Contribution of
+                <b :style="{color:'var(--accent2)'}">“{{ influence.letters[selLetter].char }}”</b>
+                to each talent (positive = it boosts that talent):</div>
+              <div v-html="charts.delta"></div>
+            </div>
+            <div>
+              <div style="font-size:13px;margin-bottom:6px">Most influential letters</div>
+              <ol class="infl">
+                <li v-for="(L,k) in topLetters" :key="k" @click="selectLetter(L.index)" style="cursor:pointer">
+                  <b>{{ L.char }}</b> <span style="color:var(--muted)">influence {{ L.magnitude }}</span>
+                </li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <div v-show="tab==='age'" v-if="ageRows">
+          <p class="hint">Drag through your life. Your talents rise and fall as the year-ring turns from your
+             birth angle, so the mix at age 6 is not the mix at age 60.</p>
+          <div class="agebar">
+            <input type="range" min="0" max="90" step="1" v-model.number="age" @input="onAge">
+            <div class="ageval">Age <b>{{ age }}</b> · strongest now: <b :style="{color:topAtAge.color}">talent {{ topAtAge.digit }}</b></div>
+          </div>
+          <div style="max-width:360px" v-html="charts.age"></div>
+        </div>
+
+        <div v-show="tab==='sound'" v-if="noteSeq.length">
+          <p class="hint">Hear your name. Each letter becomes the musical note of its colour band
+             (the same B/C/D/E/F/G mapping as Music &amp; Stars), played in order.</p>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+            <button class="btn" @click="playing ? stopName() : playName()">{{ playing ? '◼ Stop' : '▶ Play your name' }}</button>
+            <span style="color:var(--muted);font-size:12px">{{ noteSeq.length }} notes</span>
+          </div>
+          <div class="notes">
+            <span v-for="(n,i) in noteSeq" :key="i" class="nchip" :class="{lit:i===playIndex}"
+                  :style="{background:n.color, color:'#0a0a14'}">{{ n.char }}<small>{{ n.note }}</small></span>
+          </div>
         </div>
         <div v-show="tab==='mandala'">
           <p class="hint">Your raw 365-digit fingerprint laid around the year. Each day is coloured by its
@@ -322,8 +389,7 @@
       </div>
 
       <footer class="credit">
-        <b>NAMEMAN</b> · Where Names Come To Life · Soular-System™ is a registered trademark ·
-        © NAMEMAN · Where Names Come To Life.
+        <b>NAMEMAN</b> · Where Names Come To Life · Soular-System™ is a registered trademark · © NAMEMAN.
       </footer>
     </div>
   </div>
@@ -332,7 +398,7 @@
 <script src="engine.js"></script>
 <script src="charts.js"></script>
 <script>
-const { createApp, reactive, ref, watch } = Vue;
+const { createApp, reactive, ref, computed, watch } = Vue;
 createApp({
   setup(){
     const name = ref('EXAMPLE NAME');
@@ -347,9 +413,73 @@ createApp({
     const theme = ref('dark');
     const friends = ref('ALPHA OMEGA, BETA GAMMA, DELTA SIGMA');
     const charts = reactive({star:'',rank:'',band:'',scale:'',pillar:'',tri:'',traits:'',life:'',
-                             mandala:'',compass:'',pyramid:'',compatList:'',compatRadar:'',reading:'',music:''});
+                             mandala:'',compass:'',pyramid:'',compatList:'',compatRadar:'',reading:'',music:'',
+                             delta:'',age:''});
     const opt = ()=>({theme:theme.value});
     const palette = ['#66b2ff','#ff6b6b','#7CFFB2','#ffd166','#b266ff'];
+
+    // ---- Letter Influence ----
+    const influence = ref(null);
+    const selLetter = ref(0);
+    const maxMag = computed(()=> influence.value ? Math.max(1,...influence.value.letters.map(L=>L.magnitude)) : 1);
+    const topLetters = computed(()=> influence.value
+      ? influence.value.letters.slice().sort((a,b)=>b.magnitude-a.magnitude).slice(0,6) : []);
+    function heat(mag){
+      const t = Math.min(1, mag/maxMag.value);            // 0..1
+      const c = theme.value==='dark'
+        ? [ [26,28,44], [178,102,255] ]                   // panel2 -> accent
+        : [ [240,240,248], [139,61,255] ];
+      const mix = c[0].map((a,i)=> Math.round(a+(c[1][i]-a)*t));
+      return 'rgb('+mix.join(',')+')';
+    }
+    function drawDelta(){ if(influence.value && influence.value.letters.length) charts.delta = NumCharts.deltaBars(influence.value.letters[selLetter.value].deltas, opt()); }
+    function selectLetter(i){ selLetter.value=i; drawDelta(); }
+
+    // ---- Age Explorer ----
+    const ageRows = ref(null);
+    const ageMax = ref(1);
+    const age = ref(30);
+    const topAtAge = computed(()=>{
+      if(!ageRows.value) return {digit:0,color:'#fff'};
+      const ts = ageRows.value[Math.min(age.value, ageRows.value.length-1)].ts;
+      const d = ts.indexOf(Math.max(...ts));
+      return {digit:d, color: NumEngine.DIGIT_COLORS[d]};
+    });
+    function drawAge(){ if(ageRows.value) charts.age = NumCharts.ageProfile(ageRows.value[Math.min(age.value, ageRows.value.length-1)].ts, ageMax.value, opt()); }
+    function onAge(){ drawAge(); }
+
+    // ---- Hear Your Name ----
+    const BAND_NOTE = ['B','C','D','G','E','F'];
+    const NOTE_FREQ = {C:261.63,D:293.66,E:329.63,F:349.23,G:392.00,A:440.00,B:493.88};
+    const playing = ref(false), playIndex = ref(-1);
+    const noteSeq = computed(()=>{
+      const out=[]; const s=(name.value||'').toUpperCase();
+      for(let i=0;i<s.length;i++){
+        const v=s.charCodeAt(i)-64; if(v<1||v>26) continue;
+        const dr=((v-1)%9)+1, b=NumEngine.DIGIT_BAND[dr], note=BAND_NOTE[b];
+        out.push({char:s[i], note, freq:NOTE_FREQ[note], color:NumEngine.DIGIT_COLORS[dr]});
+      }
+      return out;
+    });
+    let actx=null, atimer=null;
+    function stopName(){ playing.value=false; playIndex.value=-1; if(atimer){clearTimeout(atimer);atimer=null;} }
+    function playName(){
+      stopName(); const seq=noteSeq.value; if(!seq.length) return;
+      try{ actx = actx || new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return; }
+      if(actx.resume) actx.resume();
+      playing.value=true; let i=0; const dur=300;
+      (function step(){
+        if(!playing.value || i>=seq.length){ stopName(); return; }
+        playIndex.value=i;
+        const o=actx.createOscillator(), g=actx.createGain(), t0=actx.currentTime;
+        o.type='triangle'; o.frequency.value=seq[i].freq;
+        g.gain.setValueAtTime(0.0001,t0);
+        g.gain.exponentialRampToValueAtTime(0.28,t0+0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001,t0+dur/1000);
+        o.connect(g).connect(actx.destination); o.start(t0); o.stop(t0+dur/1000+0.03);
+        i++; atimer=setTimeout(step, dur);
+      })();
+    }
     function drawBand(){ if(r.value) charts.band = NumCharts.bandChart(r.value, band.value, opt()); }
     function drawPillar(){ if(r.value) charts.pillar = NumCharts.pillarChart(r.value, pillar.value, opt()); }
     function drawLife(){ if(r.value) charts.life = lifeStyle.value==='cable'
@@ -368,6 +498,7 @@ createApp({
       charts.reading = NumCharts.readingHtml(res);
       charts.music = NumCharts.musicChart(res, opt());
       drawBand(); drawPillar(); drawLife(); runCompat();
+      drawDelta(); drawAge();
     }
     function runCompat(){
       const res = r.value; if(!res) return;
@@ -393,13 +524,22 @@ createApp({
     }
     function run(){
       if(!name.value.trim()) return;
+      stopName();
       r.value = NumEngine.analyze(name.value, {month:month.value, day:day.value});
+      influence.value = NumEngine.letterInfluence(name.value);
+      selLetter.value = 0;
+      const ev = NumEngine.evolution(r.value, 'age');     // 91 rows, J = 0..90
+      ageRows.value = ev.rows;
+      ageMax.value = ev.maxTs || 1;
       redraw();
     }
     function toggleTheme(){ theme.value = theme.value==='dark' ? 'light' : 'dark'; }
     watch(theme, v=>{ document.body.classList.toggle('light', v==='light'); redraw(); }, {immediate:true});
     run();
     return { name, month, day, months, r, tab, band, pillar, lifeAxis, lifeStyle, theme, friends, charts,
+             influence, selLetter, maxMag, topLetters, heat, selectLetter,
+             ageRows, age, topAtAge, onAge,
+             noteSeq, playing, playIndex, playName, stopName,
              run, drawBand, drawPillar, drawLife, runCompat, toggleTheme, draw:drawBand };
   }
 }).mount('#app');

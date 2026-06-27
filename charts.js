@@ -546,6 +546,46 @@
     return s.join('');
   }
 
+  /* ---- DELTA BARS : a letter's contribution to each talent --------- */
+  function deltaBars(deltas, opt) {
+    var T = theme(opt);
+    var n = 10, rowH = 24, cx = 150, half = 130, W = cx + half + 44, Hh = n * rowH + 6;
+    var maxAbs = Math.max.apply(null, deltas.map(function (x) { return Math.abs(x); })) || 1;
+    var s = ['<svg viewBox="0 0 ' + W + ' ' + Hh + '" class="barsvg" xmlns="http://www.w3.org/2000/svg">'];
+    s.push('<line x1="' + cx + '" y1="2" x2="' + cx + '" y2="' + (n * rowH) + '" stroke="' + T.grid + '"/>');
+    for (var d = 0; d < n; d++) {
+      var y = d * rowH + 5, val = deltas[d], w = (Math.abs(val) / maxAbs) * half;
+      var x = val >= 0 ? cx : cx - w;
+      s.push('<text x="6" y="' + (y + 14) + '" font-size="11" font-weight="bold" fill="' + E.DIGIT_COLORS[d] + '">' + d + '</text>');
+      s.push('<rect x="' + x.toFixed(1) + '" y="' + y + '" width="' + Math.max(w, 0.6).toFixed(1) +
+             '" height="14" rx="2" fill="' + (val >= 0 ? E.DIGIT_COLORS[d] : T.muted) + '"/>');
+      if (val !== 0)
+        s.push('<text x="' + (val >= 0 ? cx + w + 4 : cx - w - 4).toFixed(1) + '" y="' + (y + 13) +
+               '" font-size="10" fill="' + T.ink + '" text-anchor="' + (val >= 0 ? 'start' : 'end') + '">' +
+               (val > 0 ? '+' : '') + val + '</text>');
+    }
+    s.push('</svg>');
+    return s.join('');
+  }
+
+  /* ---- AGE PROFILE : talent mix at one age (for the scrubber) ------- */
+  function ageProfile(ts, maxTs, opt) {
+    var T = theme(opt);
+    var n = 10, rowH = 24, barX = 28, barW = 240, W = barX + barW + 60, Hh = n * rowH + 6;
+    var top = ts.indexOf(Math.max.apply(null, ts));
+    var s = ['<svg viewBox="0 0 ' + W + ' ' + Hh + '" class="barsvg" xmlns="http://www.w3.org/2000/svg">'];
+    for (var d = 0; d < n; d++) {
+      var y = d * rowH + 5, w = (ts[d] / (maxTs || 1)) * barW;
+      s.push('<text x="4" y="' + (y + 15) + '" font-size="11" font-weight="bold" fill="' + E.DIGIT_COLORS[d] + '">' + d + '</text>');
+      s.push('<rect x="' + barX + '" y="' + (y + 2) + '" width="' + barW + '" height="15" rx="3" fill="' + T.track + '"/>');
+      s.push('<rect x="' + barX + '" y="' + (y + 2) + '" width="' + w.toFixed(1) + '" height="15" rx="3" fill="' +
+             E.DIGIT_COLORS[d] + '"' + (d === top ? ' stroke="' + T.ink + '" stroke-width="1.5"' : '') + '/>');
+      s.push('<text x="' + (barX + barW + 6) + '" y="' + (y + 15) + '" font-size="10" fill="' + T.ink + '">' + Math.round(ts[d]) + '</text>');
+    }
+    s.push('</svg>');
+    return s.join('');
+  }
+
   /* ---- WRITTEN READING : narrative paragraphs ---------------------- */
   function readingHtml(r) {
     return E.reading(r).map(function (p) {
@@ -573,6 +613,7 @@
     yearMandala: yearMandala, soulCompass: soulCompass,
     radarChart: radarChart, pyramidExplainer: pyramidExplainer,
     readingHtml: readingHtml, musicChart: musicChart,
+    deltaBars: deltaBars, ageProfile: ageProfile,
     THEMES: THEMES
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
