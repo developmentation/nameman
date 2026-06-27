@@ -457,16 +457,24 @@
       }).join('');
       tri.push('<div class="trow"><span class="tlbl">B' + z + '</span>' + digs + '</div>');
     }
-    // step 3: the 3-D pyramid (12 sub-triangles), skewed layers
-    var layers = [];
+    // step 3: the 3-D pyramid, drawn as one coherent SVG (scales to width,
+    // single gentle tilt so it never squashes per-row like a CSS-3D stack).
+    var maxN = 78, cw = 480 / maxN, rh = 14, padTop = 6, PW = 480, PH = padTop + 12 * rh + 4;
+    var psvg = ['<svg viewBox="0 0 ' + PW + ' ' + PH + '" class="pyrsvg" xmlns="http://www.w3.org/2000/svg">'];
+    psvg.push('<defs><filter id="pyrsh" x="-4%" y="-4%" width="108%" height="118%">' +
+      '<feDropShadow dx="0" dy="1.6" stdDeviation="1.4" flood-color="#000" flood-opacity="0.35"/></filter></defs>');
+    psvg.push('<g filter="url(#pyrsh)">');
     for (var k = 0; k < 12; k++) {
-      var sub = r.triangle[k];                       // [SL(1,Z) .. SL(Z,Z)]
-      var flat = sub.join('');
-      var cells = flat.split('').map(function (c) {
-        return '<span class="pd" style="background:' + E.DIGIT_COLORS[+c] + '"></span>';
-      }).join('');
-      layers.push('<div class="player">' + cells + '<span class="plbl">B' + (k+1) + ' → ' + flat.length + '</span></div>');
+      var flat = r.triangle[k].join('');             // T(k+1) digits, apex at top
+      var nC = flat.length, rowW = nC * cw, x0 = (PW - rowW) / 2, y = padTop + k * rh;
+      for (var c = 0; c < nC; c++) {
+        psvg.push('<rect x="' + (x0 + c * cw).toFixed(2) + '" y="' + y.toFixed(2) +
+          '" width="' + (cw - 0.7).toFixed(2) + '" height="' + (rh - 3) +
+          '" rx="1" fill="' + E.DIGIT_COLORS[+flat.charAt(c)] + '" stroke="rgba(0,0,0,.25)" stroke-width="0.4"/>');
+      }
     }
+    psvg.push('</g></svg>');
+    var pyramid = '<div class="pyr3d">' + psvg.join('') + '</div>';
     // step 5: counts -> scores
     var counts = r.values.map(function (v, d) {
       return '<span class="cnt" style="border-color:' + E.DIGIT_COLORS[d] + '"><b style="color:' +
@@ -478,7 +486,7 @@
       '<div class="pstep"><span class="pn">2</span><b>Numerology Triangle</b>: base 1 to base 12 (78 digits)' +
         '<div class="triangle">' + tri.join('') + '</div></div>' +
       '<div class="pstep"><span class="pn">3</span><b>3-D Pyramid</b>: each row spawns its own triangle ' +
-        '(Σ = 364 digits, +1 birth-zero = 365)<div class="pyr">' + layers.join('') + '</div></div>' +
+        '(Σ = 364 digits, +1 birth-zero = 365)' + pyramid + '</div>' +
       '<div class="pstep"><span class="pn">4</span><b>Count each digit</b> in the 365, then ×1000/365' +
         '<div class="cnts">' + counts + '</div></div>';
   }
