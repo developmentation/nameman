@@ -1,10 +1,10 @@
 /* =====================================================================
- * NUMEROLOGY ENGINE: faithful port of NUM-92.FRM (Visual Basic)
+ * NUMEROLOGY ENGINE — NAMEMAN
  * ---------------------------------------------------------------------
  * Pure, DOM-free math. Works in the browser (window.NumEngine) and in
  * Node (module.exports) so the same code is used by the app AND the tests.
  *
- * The algorithm (cross-checked against the handwritten notes, pages 1-9):
+ * The algorithm:
  *   1. NAME -> NUMBER     : A=01..Z=26, ordinal, 2-digit, concatenated.
  *   2. NAME NUMBER        : left-pad concatenation to >= 12 digits.
  *   3. BASING(s, level)   : generalised digital-root. For each base Z
@@ -30,17 +30,17 @@
 (function (root) {
   'use strict';
 
-  var PI = 3.141592654;            // VB used this truncated value
+  var PI = 3.141592654;            // truncated value used for parity
   var DE = PI / 180;
 
-  // ---- VB Int(): truncate toward -infinity. All our inputs are >= 0. ----
+  // ---- Int(): truncate toward -infinity. All our inputs are >= 0. ----
   function vbInt(x) { return Math.floor(x); }
-  // VB "Int(x*1000/365 + .5)" rounding used throughout for scores.
+  // Int(x*1000/365 + .5) rounding used throughout for scores.
   function score1000(count) { return vbInt(count * 1000 / 365 + 0.5); }
 
   /* ----------------------------------------------------------------
    * BASING(START_STR, LEVEL)  ->  { 1: s1, 2: s2, ... LEVEL: sLevel }
-   * Faithful char-for-char port of Private Sub BASING.
+   * The basing reduction, char for char.
    * ---------------------------------------------------------------- */
   function basing(startStr, level) {
     var levels = {};
@@ -66,7 +66,7 @@
         }
         if (carry > 0) {
           var rc = String(carry);
-          result2 = rc.charAt(rc.length - 1) + result2;  // VB only keeps last digit
+          result2 = rc.charAt(rc.length - 1) + result2;  // keep only the last carry digit
         }
         S = result2;
         L = S.length;
@@ -136,7 +136,7 @@
   }
 
   /* ----------------------------------------------------------------
-   * ARCTAN(x, y) : 4-quadrant angle in radians, faithful VB port.
+   * ARCTAN(x, y) : 4-quadrant angle in radians.
    * ---------------------------------------------------------------- */
   function arctan(x, y) {
     if (Math.abs(x) < 0.000001) x = 0;
@@ -191,12 +191,12 @@
     return { name: names[idx], range: ranges[idx], index: idx };
   }
 
-  // Calendar: day-of-year angle, exactly as DATE_ANGLE in the VB.
+  // Calendar: day-of-year angle.
   var MONTH_OFFSET = [0,0,31,59,90,120,151,181,212,243,273,304,334]; // 1-indexed
   var MONTH_NAMES = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE',
                      'JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
   function dateAngle(monthNum, dayNum) {
-    // VB adds a fixed 11-day offset, then the day of month.
+    // Add a fixed 11-day offset, then the day of month.
     return MONTH_OFFSET[monthNum] + 11 + dayNum;
   }
 
@@ -277,7 +277,7 @@
       spoke.push({ index: j, digit: d, score: scores[d], angle: 15 + 30 * j });
     }
 
-    // ranked talents (faithful VB bubble sort, descending, stable on ties)
+    // ranked talents (bubble sort, descending, stable on ties)
     var sort = [];
     for (var z = 0; z < 10; z++) sort.push([z, values[z]]);
     for (var a = 0; a < 10; a++) {
@@ -301,7 +301,7 @@
     if (printAngle < 0) printAngle += 360;
 
     // 6 colour bands. Each band has a DIMENSION name, an ELEMENT name and
-    // its LOVES / POWERS trait words (transcribed from the printed report).
+    // its LOVES / POWERS trait words.
     // purple{0}, blue{1,9}, green{2,8}, yellow{3,7}, orange{4,6}, red{5}
     var bands = BANDS.map(function (b) {
       var total = b.digits.reduce(function (s, d) { return s + values[d]; }, 0);
@@ -385,7 +385,7 @@
     P.push({ title: 'Soul Angle and Magnetic Direction', text:
       'The balance point of all your talents is the white sun at the centre of the wheel. ' +
       'It sits at a soul angle of ' + R.soulAngle + '°, which places your projection pattern in ' +
-      R.quadrant.name + ' (' + R.quadrant.range + '). The original calls this your magnetic direction. ' +
+      R.quadrant.name + ' (' + R.quadrant.range + '). This is your magnetic direction. ' +
       'Your name sets it on its own. Your birth date does not move it. It only changes how your ' +
       'talents rise and fall across the years.' });
 
@@ -414,7 +414,7 @@
 
   /* ----------------------------------------------------------------
    * EVOLUTION / "Future Development" pillar series.  Faithful to the two
-   * VB charts in Private Sub EVOLUTION:
+   * the two evolution charts:
    *   mode 'age'  -> J = 0..90,  ring = (J + ANGLE) mod 365   (date-driven!)
    *                 axis = AGE, gridlines at 30/60/90.
    *   mode 'year' -> J = 0..364, ring = (J + 11)   mod 365    (calendar)
@@ -459,7 +459,7 @@
     return {
       mode: mode, rows: rows, maxTs: maxTs, ticks: ticks,
       cap: rows[0].ts.slice(), mult: mult,
-      // VB column order, left -> right: 9 8 7 6 5 4 3 2 1 0
+      // column order, left -> right: 9 8 7 6 5 4 3 2 1 0
       order: [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
     };
   }

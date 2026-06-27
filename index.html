@@ -34,9 +34,11 @@
             border-radius:9px;padding:10px 12px;font-size:16px;outline:none;max-width:100%}
   .controls input:focus,.controls select:focus{border-color:var(--accent)}
   .controls .name-in{min-width:280px}
-  .btn{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#0a0a14;
-       font-weight:700;padding:11px 20px;border-radius:9px;cursor:pointer;font-size:14px}
-  .btn:hover{filter:brightness(1.08)}
+  .btn{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#fff;
+       font-weight:700;padding:12px 22px;border-radius:9px;cursor:pointer;font-size:14px;
+       text-shadow:0 1px 2px rgba(0,0,0,.35);box-shadow:0 2px 10px rgba(120,80,255,.25)}
+  .btn:hover{filter:brightness(1.06)}
+  .btn:active{filter:brightness(.96)}
   .grid{display:grid;grid-template-columns:minmax(420px,1.2fr) 1fr;gap:18px;align-items:start}
   @media(max-width:980px){.grid{grid-template-columns:1fr}}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:18px}
@@ -111,8 +113,11 @@
     .controls{padding:12px;gap:10px}
     .controls .name-in{min-width:0;width:100%}
     .controls > div{flex:1 1 100%;min-width:0}
+    .controls > div:nth-child(2){flex:1 1 58%}   /* birth month */
+    .controls > div:nth-child(3){flex:1 1 30%}   /* day, same line as month */
+    .controls select{width:100%}
     .lbl-note{display:none}
-    .btn{width:100%}
+    .btn{flex:1 1 100%;width:100%}
     .taglines{gap:6px;flex-direction:column;margin-bottom:16px}
     .card{padding:13px 13px}
     .stat{flex:1 1 calc(50% - 7px);min-width:0}
@@ -217,7 +222,7 @@
           <div class="tab" :class="{on:tab==='raw'}" @click="tab='raw'">Raw data</div>
         </div>
         <div v-show="tab==='reading'">
-          <p class="hint">A written interpretation in the original's own voice. It covers your Soular System, Forces and Feelings, and magnetic direction.</p>
+          <p class="hint">A written interpretation of your name, covering your Soular System, Forces and Feelings, and magnetic direction.</p>
           <div class="reading" v-html="charts.reading"></div>
         </div>
         <div v-show="tab==='mandala'">
@@ -236,11 +241,10 @@
           <div class="pyrwrap scrollx" v-html="charts.pyramid"></div>
         </div>
         <div v-show="tab==='music'">
-          <p class="hint">From the original <i>Piano Keys &amp; the Seven Spinal Stars</i> diagram: the seven
-             musical keys sit on the colour ring, each star carrying a black + white key (B &amp; F are dual nature).
-             Here each star is sized by <b>your</b> strength in that colour, so your dominant talents are your
-             brightest stars. <span style="color:#caa">Chakra names below follow the traditional colour correspondence.
-             They are not written in the source image.</span></p>
+          <p class="hint"><i>Piano Keys &amp; the Seven Spinal Stars.</i> The seven musical keys sit on the colour
+             ring, each star carrying a black and a white key (B &amp; F are dual nature). Each star is sized by
+             <b>your</b> strength in that colour, so your dominant talents are your brightest stars.
+             <span style="color:#caa">Chakra names below follow the traditional colour correspondence.</span></p>
           <div class="grid">
             <div style="max-width:440px" v-html="charts.music"></div>
             <table class="traits"><thead><tr><th>Key</th><th>Colour → Element</th><th>Chakra (traditional)</th></tr></thead><tbody>
@@ -255,8 +259,8 @@
           </div>
         </div>
         <div v-show="tab==='compat'">
-          <p class="hint">Which names are closest to yours. This revives the original's "find out which of your friends'
-             names are closest to yours." Enter up to five friends' names, separated by commas. Closeness is the correlation of talent profiles.</p>
+          <p class="hint">Find out which names are closest to yours. Enter up to five names, separated by commas.
+             Closeness is the correlation of their talent profiles with yours.</p>
           <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
             <input class="name-in" v-model="friends" @keyup.enter="runCompat" placeholder="ENTER NAMES OF FRIENDS (0 to 5), comma-separated">
             <button class="btn" @click="runCompat">Compare</button>
@@ -280,7 +284,7 @@
           <div style="max-width:700px;margin:auto" v-html="charts.life"></div>
         </div>
         <div v-show="tab==='traits'">
-          <p class="hint">Each colour band’s LOVES (receptive traits) and POWERS (active traits), from the printed report.
+          <p class="hint">Each colour band’s LOVES (receptive traits) and POWERS (active traits).
              Circle size scales with the band’s score.</p>
           <div v-html="charts.traits"></div>
         </div>
@@ -309,18 +313,18 @@
       </div>
 
       <div class="gaps">
-        <h3>⚑ Interpretation notes &amp; gaps of uncertainty</h3>
+        <h3>✦ How to read your chart</h3>
         <ul>
-          <li><b>Soul angle is name-only.</b> In the VB code the kernel at the birth day cancels its own normaliser, so the centroid (and angle) depend only on the name. Birth date only changes the <i>evolution</i> curves. (Confirmed by tracing SOUL_STAR.)</li>
-          <li><b>"Scales"</b> is the 0 to 1000 talent gauge. The <i>Music &amp; Stars</i> tab reproduces the original Piano-Keys and chakra diagram, sized by your colour strengths. That musical overlay is conceptual, not computed by any VB formula. The <b>chakra names</b> shown follow the traditional colour correspondence, since the source image writes none.</li>
-          <li><b>Quadrant labels.</b> Page 9 only defines the angle's quadrant (a cross at 0/90/180/270) for the "projection pattern." Its compass actually shows example <i>people</i> at the cardinal points, not zodiac or seasons, so quadrants are labelled neutrally (Quadrant I to IV by angle).</li>
-          <li><b>Sun size</b> uses the VB’s later formula √(total area)/4; the author’s own notes say its size “has no real meaning,” only its location/angle.</li>
+          <li><b>Your soul angle comes from your name.</b> The white sun is the balance point of all your talents, and its angle is set by your name alone. Your birth date does not move it; it only shapes the <i>Future Development</i> and <i>Life Path</i> charts over time.</li>
+          <li><b>The inner zone hides quiet talents.</b> On the Soul Star, any talent scoring under 100 sits inside the dark inner zone. These are inner or still-forming talents, not weaknesses. Talents above 100 push out into the bright ring.</li>
+          <li><b>Scales run 0 to 1000.</b> Every talent is scored as a share of your 365-day pattern, scaled to a 1000 base, so the numbers read like clear proportions.</li>
+          <li><b>Music &amp; chakras.</b> The Music &amp; Stars wheel maps the seven musical keys to the colour ring as a creative overlay; the chakra names follow the traditional colour correspondence.</li>
         </ul>
       </div>
 
       <footer class="credit">
         <b>NAMEMAN</b> · Where Names Come To Life · Soular-System™ is a registered trademark ·
-        © NAMEMAN. Web rebuild faithful to the original Visual Basic analyzer.
+        © NAMEMAN · Where Names Come To Life.
       </footer>
     </div>
   </div>

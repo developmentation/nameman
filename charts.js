@@ -1,7 +1,7 @@
 /* =====================================================================
- * NUMEROLOGY CHARTS: dynamic SVG rendering of the VB picture-box art.
- * Every chart is generated from the engine result by re-deriving the
- * exact VB geometry. Each function returns an SVG/HTML string for v-html.
+ * NUMEROLOGY CHARTS — NAMEMAN
+ * Every chart is generated from the engine result with pure geometry.
+ * Each function returns an SVG/HTML string for v-html binding.
  * All renderers accept an optional theme (DARK default / LIGHT).
  * ===================================================================== */
 (function (root) {
@@ -31,12 +31,12 @@
     return THEMES.dark;
   }
 
-  /* ---- SOUL STAR : the planet wheel (Picture1 in the VB) ------------ */
+  /* ---- SOUL STAR : the planet wheel ------------------------------- */
   function starChart(r, opt) {
     var T = theme(opt);
     var MX = 320, MY = 256;
     var MAX = r.maxScore || 1;
-    var M = 0.22 * 190 / MAX;             // VB scaling: largest planet -> 41.8px
+    var M = 0.22 * 190 / MAX;             // scaling: largest planet -> 41.8px
     var s = [];
     s.push('<svg viewBox="0 0 640 512" class="starsvg" xmlns="http://www.w3.org/2000/svg">');
     s.push('<rect x="0" y="0" width="640" height="512" fill="' + T.bg + '"/>');
@@ -132,15 +132,15 @@
     var T = theme(opt);
     var key = mode === 'dimension' ? 'dimension' : 'element';
     var max = Math.max.apply(null, r.bands.map(function (e) { return e.score; })) || 1;
-    var W = 300, rowH = 34;
-    var s = ['<svg viewBox="0 0 ' + (W + 150) + ' ' + (r.bands.length * rowH + 8) +
+    var barX = 124, W = 250, rowH = 34;
+    var s = ['<svg viewBox="0 0 ' + (barX + W + 96) + ' ' + (r.bands.length * rowH + 8) +
              '" class="barsvg" xmlns="http://www.w3.org/2000/svg">'];
     r.bands.forEach(function (e, i) {
       var y = i * rowH + 6, bw = (e.score / max) * W;
       s.push('<rect x="2" y="' + (y + 5) + '" width="14" height="14" rx="3" fill="' + e.color + '" stroke="' + T.edge + '"/>');
-      s.push('<text x="22" y="' + (y + 17) + '" font-size="12" fill="' + T.ink + '">' + e[key] + '</text>');
-      s.push('<rect x="100" y="' + (y + 4) + '" width="' + bw.toFixed(1) + '" height="18" rx="4" fill="' + e.color + '" stroke="' + T.edge + '" stroke-width="0.5"/>');
-      s.push('<text x="' + (104 + bw).toFixed(1) + '" y="' + (y + 18) + '" font-size="12" fill="' + T.ink +
+      s.push('<text x="22" y="' + (y + 17) + '" font-size="11" fill="' + T.ink + '">' + e[key] + '</text>');
+      s.push('<rect x="' + barX + '" y="' + (y + 4) + '" width="' + bw.toFixed(1) + '" height="18" rx="4" fill="' + e.color + '" stroke="' + T.edge + '" stroke-width="0.5"/>');
+      s.push('<text x="' + (barX + 4 + bw).toFixed(1) + '" y="' + (y + 18) + '" font-size="12" fill="' + T.ink +
              '">' + e.score + '  <tspan fill="' + T.muted + '">(' + e.digits.join(',') + ')</tspan></text>');
     });
     s.push('</svg>');
@@ -183,7 +183,7 @@
   /* ---- PILLARS : the tall grey "Future Development" graphs ---------
    * mode 'age'  -> AGE axis (0/30/60/90), date-driven path.
    * mode 'year' -> calendar axis (Jan..Dec).
-   * Faithful to VB: each row a black-edged bar; grey fill = karmic shade
+   * Each row is a black-edged bar; grey fill = karmic shade
    * (lighter = more karmic help); coloured cap = birth profile. Columns
    * left->right are digits 9 8 7 6 5 4 3 2 1 0.
    * ------------------------------------------------------------------ */
@@ -221,8 +221,8 @@
         var cx = left + c * colW + colW / 2;
         var half = (row.ts[d] / maxTs) * (colW * 0.46);
         if (half < 0.3) return;
-        var shade = Math.round(row.karma[d] * 42.5);     // VB: karma*42.5 grey
-        // black edge (full width) then grey inner (2px inset), matches VB
+        var shade = Math.round(row.karma[d] * 42.5);     // karma*42.5 grey
+        // black edge (full width) then grey inner (2px inset)
         s.push('<rect x="' + (cx - half).toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + (2 * half).toFixed(1) +
                '" height="' + (rowH + 0.6).toFixed(2) + '" fill="' + T.edge + '"/>');
         var inner = half - 1.5;
@@ -352,7 +352,7 @@
 
   /* ---- YEAR MANDALA : the raw 365-digit ring as a calendar wheel ----
    * Calendar day J (0..364) sits at angle J/365 from top; the digit shown
-   * is NUM_STRING[(J+11) mod 365] (the same ring mapping the VB uses).
+   * is NUM_STRING[(J+11) mod 365] (the standard ring mapping).
    * Birthday is starred; months ring the outside.
    * ------------------------------------------------------------------ */
   function yearMandala(r, opt) {
