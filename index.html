@@ -115,6 +115,38 @@
     transition:transform .08s ease,box-shadow .08s ease}
   .nchip small{font-size:8px;font-weight:600;opacity:.75}
   .nchip.lit{transform:translateY(-4px) scale(1.14);box-shadow:0 5px 16px rgba(120,80,255,.6);outline:2px solid #fff}
+  /* ---- printable report (hidden on screen, shown when printing) ---- */
+  #report{display:none}
+  #report .rtitle{font-size:22px;font-weight:800;letter-spacing:.3px;margin:0 0 2px}
+  #report .rsub{color:#555;font-size:12px;margin:0 0 14px}
+  #report .rsec{page-break-inside:avoid;break-inside:avoid;margin:0 0 9mm}
+  #report h2{font-size:13px;text-transform:uppercase;letter-spacing:.7px;color:#6a3df0;
+             border-bottom:1px solid #ddd;padding-bottom:3px;margin:0 0 8px}
+  #report svg{width:100%;height:auto;display:block;margin:0 auto}
+  #report .rstar{max-width:120mm}
+  #report .rcompass{max-width:78mm}
+  #report .rwide{max-width:165mm}
+  #report .rrow{display:flex;gap:8mm;flex-wrap:wrap;align-items:flex-start}
+  #report .rrow > div{flex:1 1 70mm;min-width:0}
+  #report table{width:100%;border-collapse:collapse;font-size:11px;margin-top:4px}
+  #report td,#report th{border:1px solid #d9d9e3;padding:4px 7px;text-align:left;vertical-align:top}
+  #report th{background:#f3f3fb;color:#444;font-size:10px;text-transform:uppercase;letter-spacing:.4px}
+  #report .rread{columns:2;column-gap:8mm;font-size:12px}
+  #report .rread .rp{break-inside:avoid;margin:0 0 7px}
+  #report .rread h3{margin:0 0 3px;font-size:12px;color:#6a3df0}
+  #report .rmono{font-family:ui-monospace,Consolas,monospace;font-size:9.5px;color:#444;word-break:break-all}
+  #report .pyrsvg{transform:none}
+  #report .pstep{background:#f6f6fb;border:1px solid #e2e2ee;color:#222}
+  #report .pstep .pn{background:#6a3df0;color:#fff}
+  #report .rcredit{margin-top:8mm;border-top:1px solid #ddd;padding-top:6px;color:#777;font-size:10px;text-align:center}
+  @media print{
+    @page{ size:A4; margin:13mm; }
+    body{background:#fff !important;color:#111}
+    #app > header{display:none !important}
+    .wrap > *:not(#report){display:none !important}
+    #report{display:block !important}
+    .nchip,.lchip{box-shadow:none !important}
+  }
   .scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .triangle{overflow-x:auto}
   @media(max-width:600px){
@@ -145,6 +177,7 @@
   <header>
     <h1>✶ NAMEMAN Numerology Name Analyzer</h1>
     <span class="sub">The Soular-System™ hidden in your name. Talents, elements, dimensions, centroid, and soul angle.</span>
+    <button class="themebtn" @click="downloadPDF">⤓ Download PDF</button>
     <button class="themebtn" @click="toggleTheme">{{ theme==='dark' ? '☀ Light' : '☾ Dark' }}</button>
   </header>
   <div class="wrap">
@@ -392,6 +425,8 @@
         <b>NAMEMAN</b> · Where Names Come To Life · Soular-System™ is a registered trademark · © NAMEMAN.
       </footer>
     </div>
+
+    <div id="report" v-html="charts.report"></div>
   </div>
 </div>
 
@@ -414,7 +449,7 @@ createApp({
     const friends = ref('ALPHA OMEGA, BETA GAMMA, DELTA SIGMA');
     const charts = reactive({star:'',rank:'',band:'',scale:'',pillar:'',tri:'',traits:'',life:'',
                              mandala:'',compass:'',pyramid:'',compatList:'',compatRadar:'',reading:'',music:'',
-                             delta:'',age:''});
+                             delta:'',age:'',report:''});
     const opt = ()=>({theme:theme.value});
     const palette = ['#66b2ff','#ff6b6b','#7CFFB2','#ffd166','#b266ff'];
 
@@ -522,6 +557,47 @@ createApp({
         rows.map(x=>({label:x.name, scores:x.scores, stroke:x.stroke})));
       charts.compatRadar = NumCharts.radarChart(series, opt());
     }
+    // ---- Printable PDF report (all charts as crisp SVG + data tables) ----
+    function buildReport(res){
+      const lt={theme:'light'}, E=NumEngine, C=NumCharts;
+      const dataRows = res.values.map((v,d)=>
+        `<tr><td style="color:${E.DIGIT_COLORS[d]};font-weight:700">${d}</td><td>${v}</td><td>${res.scores[d]}</td><td>${E.DIGIT_DIMENSION[d]}</td><td>${E.DIGIT_ELEMENT[d]}</td></tr>`).join('');
+      const reading = E.reading(res).map(p=>`<div class="rp"><h3>${p.title}</h3><div>${p.text}</div></div>`).join('');
+      let when=''; try{ when=' · generated '+new Date().toLocaleDateString(); }catch(e){}
+      return `
+        <div class="rtitle">NAMEMAN — Numerology Report</div>
+        <div class="rsub">${res.name.toUpperCase()} · born ${res.monthName} ${res.dayNum} · soul angle ${res.soulAngle}° (${res.quadrant.name})${when}</div>
+        <div class="rsec rrow">
+          <div><h2>Soul Star</h2><div class="rstar">${C.starChart(res,lt)}</div></div>
+          <div><h2>Soul Compass</h2><div class="rcompass">${C.soulCompass(res,lt)}</div></div>
+        </div>
+        <div class="rsec"><h2>Talents — Dominant to Subordinant</h2>${C.rankChart(res,lt)}</div>
+        <div class="rsec rrow">
+          <div><h2>Elements</h2>${C.bandChart(res,'element',lt)}</div>
+          <div><h2>Dimensions</h2>${C.bandChart(res,'dimension',lt)}</div>
+        </div>
+        <div class="rsec"><h2>Scales (0 to 1000)</h2><div class="rwide">${C.scaleChart(res,lt)}</div></div>
+        <div class="rsec"><h2>Written Reading</h2><div class="rread">${reading}</div></div>
+        <div class="rsec"><h2>Loves &amp; Powers</h2>${C.traitTable(res)}</div>
+        <div class="rsec"><h2>Year Mandala</h2><div class="rstar">${C.yearMandala(res,lt)}</div></div>
+        <div class="rsec"><h2>Future Development (calendar)</h2><div class="rwide">${C.pillarChart(res,'year',lt)}</div></div>
+        <div class="rsec"><h2>Life Path</h2><div class="rwide">${C.lifeStream(res,'year',lt)}</div></div>
+        <div class="rsec"><h2>How the numbers are built</h2>${C.pyramidExplainer(res)}</div>
+        <div class="rsec"><h2>All data</h2>
+          <table><thead><tr><th>Digit</th><th>Count</th><th>Score</th><th>Dimension</th><th>Element</th></tr></thead><tbody>${dataRows}</tbody></table>
+          <p class="rmono" style="margin-top:8px"><b>Name number:</b> ${res.nameNum}</p>
+          <p class="rmono"><b>365-digit pyramid:</b> ${res.numString}</p>
+        </div>
+        <div class="rcredit">NAMEMAN · Where Names Come To Life · Soular-System™ is a registered trademark · © NAMEMAN</div>`;
+    }
+    function downloadPDF(){
+      if(!r.value) return;
+      const prev=document.title;
+      document.title='NAMEMAN - '+r.value.name;
+      window.print();
+      setTimeout(()=>{document.title=prev;}, 800);
+    }
+
     function run(){
       if(!name.value.trim()) return;
       stopName();
@@ -532,6 +608,7 @@ createApp({
       ageRows.value = ev.rows;
       ageMax.value = ev.maxTs || 1;
       redraw();
+      charts.report = buildReport(r.value);
     }
     function toggleTheme(){ theme.value = theme.value==='dark' ? 'light' : 'dark'; }
     watch(theme, v=>{ document.body.classList.toggle('light', v==='light'); redraw(); }, {immediate:true});
@@ -539,7 +616,7 @@ createApp({
     return { name, month, day, months, r, tab, band, pillar, lifeAxis, lifeStyle, theme, friends, charts,
              influence, selLetter, maxMag, topLetters, heat, selectLetter,
              ageRows, age, topAtAge, onAge,
-             noteSeq, playing, playIndex, playName, stopName,
+             noteSeq, playing, playIndex, playName, stopName, downloadPDF,
              run, drawBand, drawPillar, drawLife, runCompat, toggleTheme, draw:drawBand };
   }
 }).mount('#app');
