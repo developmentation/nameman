@@ -131,13 +131,16 @@
   #report table{width:100%;border-collapse:collapse;font-size:11px;margin-top:4px}
   #report td,#report th{border:1px solid #d9d9e3;padding:4px 7px;text-align:left;vertical-align:top}
   #report th{background:#f3f3fb;color:#444;font-size:10px;text-transform:uppercase;letter-spacing:.4px}
-  #report .rread{columns:2;column-gap:8mm;font-size:12px}
-  #report .rread .rp{break-inside:avoid;margin:0 0 7px}
+  #report .rread{display:grid;grid-template-columns:1fr 1fr;gap:5mm 8mm;font-size:12px}
+  #report .rread .rp{break-inside:avoid;margin:0}
   #report .rread h3{margin:0 0 3px;font-size:12px;color:#6a3df0}
   #report .rmono{font-family:ui-monospace,Consolas,monospace;font-size:9.5px;color:#444;word-break:break-all}
   #report .pyrsvg{transform:none}
   #report .pstep{background:#f6f6fb;border:1px solid #e2e2ee;color:#222}
   #report .pstep .pn{background:#6a3df0;color:#fff}
+  #report .traits .tlove{color:#1c4f7a}
+  #report .traits .tpow{color:#8a5a16}
+  #report .traits td,#report .traits th{color:#222}
   #report .rcredit{margin-top:8mm;border-top:1px solid #ddd;padding-top:6px;color:#777;font-size:10px;text-align:center}
   @media print{
     @page{ size:A4; margin:13mm; }
@@ -177,7 +180,7 @@
   <header>
     <h1>✶ NAMEMAN Numerology Name Analyzer</h1>
     <span class="sub">The Soular-System™ hidden in your name. Talents, elements, dimensions, centroid, and soul angle.</span>
-    <button class="themebtn" @click="downloadPDF">⤓ Download PDF</button>
+    <button class="themebtn" @click="downloadPDF" :disabled="pdfBusy">{{ pdfBusy ? '… Generating PDF' : '⤓ Download PDF' }}</button>
     <button class="themebtn" @click="toggleTheme">{{ theme==='dark' ? '☀ Light' : '☾ Dark' }}</button>
   </header>
   <div class="wrap">
@@ -430,6 +433,8 @@
   </div>
 </div>
 
+<script src="https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+<script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="engine.js"></script>
 <script src="charts.js"></script>
 <script>
@@ -590,12 +595,43 @@ createApp({
         </div>
         <div class="rcredit">NAMEMAN · Where Names Come To Life · Soular-System™ is a registered trademark · © NAMEMAN</div>`;
     }
-    function downloadPDF(){
-      if(!r.value) return;
-      const prev=document.title;
-      document.title='NAMEMAN - '+r.value.name;
-      window.print();
-      setTimeout(()=>{document.title=prev;}, 800);
+    const pdfBusy = ref(false);
+    async function downloadPDF(){
+      if(!r.value || pdfBusy.value) return;
+      const el = document.getElementById('report');
+      // fallback to print dialog if the libraries did not load
+      if(!window.html2canvas || !window.jspdf){
+        const prev=document.title; document.title='NAMEMAN - '+r.value.name;
+        window.print(); setTimeout(()=>{document.title=prev;},800); return;
+      }
+      pdfBusy.value = true;
+      const prevStyle = el.getAttribute('style') || '';
+      el.style.cssText = 'display:block;position:fixed;left:-10000px;top:0;width:780px;'+
+                         'background:#fff;color:#111;padding:24px;box-sizing:border-box;z-index:-1';
+      try{
+        await new Promise(requestAnimationFrame);
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p','mm','a4');
+        const pageW = pdf.internal.pageSize.getWidth();
+        const pageH = pdf.internal.pageSize.getHeight();
+        const margin = 8, imgW = pageW - margin*2, maxH = pageH - margin*2;
+        let y = margin, first = true;
+        for(const block of Array.from(el.children)){
+          const canvas = await html2canvas(block, {scale:2, backgroundColor:'#ffffff', logging:false, useCORS:true});
+          let w = imgW, h = canvas.height * w / canvas.width;
+          if(h > maxH){ const sc = maxH/h; h = maxH; w = w*sc; }   // shrink oversized blocks to one page
+          if(!first && y + h > pageH - margin){ pdf.addPage(); y = margin; }
+          pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', margin + (imgW-w)/2, y, w, h);
+          y += h + 3; first = false;
+        }
+        pdf.save('NAMEMAN - ' + r.value.name + '.pdf');
+      }catch(e){
+        console.error('PDF generation failed, falling back to print', e);
+        window.print();
+      }finally{
+        el.style.cssText = prevStyle;
+        pdfBusy.value = false;
+      }
     }
 
     function run(){
@@ -616,7 +652,7 @@ createApp({
     return { name, month, day, months, r, tab, band, pillar, lifeAxis, lifeStyle, theme, friends, charts,
              influence, selLetter, maxMag, topLetters, heat, selectLetter,
              ageRows, age, topAtAge, onAge,
-             noteSeq, playing, playIndex, playName, stopName, downloadPDF,
+             noteSeq, playing, playIndex, playName, stopName, downloadPDF, pdfBusy,
              run, drawBand, drawPillar, drawLife, runCompat, toggleTheme, draw:drawBand };
   }
 }).mount('#app');
