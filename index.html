@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NAMEMAN Numerology Name Analyzer</title>
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<style>
+  :root{
+    --bg:#070710; --panel:#12121f; --panel2:#1a1a2b; --ink:#e8e9f3;
+    --muted:#9aa0b8; --line:#262640; --accent:#b266ff; --accent2:#66b2ff;
+    --bgGrad:radial-gradient(1200px 800px at 70% -10%,#191933,#070710 60%);
+  }
+  body.light{
+    --bg:#f3f3fb; --panel:#ffffff; --panel2:#f0f0f8; --ink:#23252f;
+    --muted:#6b7088; --line:#e0e1ee; --accent:#8b3dff; --accent2:#2f7bff;
+    --bgGrad:radial-gradient(1200px 800px at 70% -10%,#eef0ff,#f3f3fb 60%);
+  }
+  *{box-sizing:border-box}
+  html,body{max-width:100%;overflow-x:hidden}
+  body{margin:0;background:var(--bgGrad);
+       color:var(--ink);font:14px/1.5 'Segoe UI',system-ui,sans-serif;min-height:100vh}
+  header{padding:22px 26px 8px;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  header h1{font-size:22px;margin:0;font-weight:700;letter-spacing:.3px}
+  header .sub{color:var(--muted);font-size:13px}
+  .themebtn{margin-left:auto;background:var(--panel2);border:1px solid var(--line);color:var(--ink);
+            border-radius:20px;padding:7px 16px;cursor:pointer;font-size:13px}
+  .themebtn:hover{border-color:var(--accent)}
+  .wrap{max-width:1280px;margin:0 auto;padding:0 20px 60px}
+  .controls{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;
+            background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:10px 0 22px}
+  .controls label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:5px}
+  .controls input,.controls select{background:var(--panel2);border:1px solid var(--line);color:var(--ink);
+            border-radius:9px;padding:10px 12px;font-size:16px;outline:none;max-width:100%}
+  .controls input:focus,.controls select:focus{border-color:var(--accent)}
+  .controls .name-in{min-width:280px}
+  .btn{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#0a0a14;
+       font-weight:700;padding:11px 20px;border-radius:9px;cursor:pointer;font-size:14px}
+  .btn:hover{filter:brightness(1.08)}
+  .grid{display:grid;grid-template-columns:minmax(420px,1.2fr) 1fr;gap:18px;align-items:start}
+  @media(max-width:980px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:18px}
+  .card h2{margin:0 0 4px;font-size:14px;text-transform:uppercase;letter-spacing:.8px;color:var(--accent2)}
+  .card .hint{color:var(--muted);font-size:12px;margin:0 0 12px}
+  .starsvg,.barsvg,.evosvg{width:100%;height:auto;display:block;border-radius:10px}
+  .stat-row{display:flex;flex-wrap:wrap;gap:14px;margin-top:6px}
+  .stat{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 14px;min-width:110px}
+  .stat .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .stat .v{font-size:20px;font-weight:700;margin-top:2px}
+  .triangle{font-family:ui-monospace,Consolas,monospace;text-align:center;line-height:1.1}
+  .trow{white-space:nowrap;margin:1px 0}
+  .tlbl{display:inline-block;width:30px;color:var(--muted);font-size:10px;text-align:right;margin-right:6px}
+  .td{display:inline-block;width:17px;height:17px;line-height:17px;margin:1px;border-radius:3px;
+      color:#111;font-weight:700;font-size:11px}
+  .tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+  .tab{padding:7px 14px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);
+       cursor:pointer;font-size:12px;color:var(--muted)}
+  .tab.on{background:var(--accent);color:#0a0a14;font-weight:700;border-color:transparent}
+  .mono{font-family:ui-monospace,Consolas,monospace;font-size:11px;color:var(--muted);word-break:break-all}
+  .nameLine{font-size:18px;font-weight:700;letter-spacing:1px}
+  .gaps{background:#1a1206;border:1px solid #614b16;border-radius:12px;padding:14px 18px;margin-top:18px;font-size:13px}
+  .gaps h3{margin:0 0 8px;color:#ffcf66;font-size:13px;text-transform:uppercase;letter-spacing:.6px}
+  .gaps li{margin:4px 0;color:#d9c79a}
+  .legend{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:8px}
+  .legend span{display:inline-flex;align-items:center;gap:4px}
+  .legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
+  table.traits{width:100%;border-collapse:collapse;font-size:13px}
+  table.traits th{text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;
+                  letter-spacing:.5px;padding:6px 10px;border-bottom:1px solid var(--line)}
+  table.traits td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+  table.traits .tcirc{width:46px;text-align:center}
+  table.traits .dot{display:inline-block;border-radius:50%;border:1px solid #000}
+  table.traits .tdim{font-weight:700;white-space:nowrap}
+  table.traits .tdim small{font-weight:400;color:var(--muted)}
+  table.traits .tlove{color:#bfe0ff}
+  table.traits .tpow{color:#ffd9a8}
+  body.light table.traits .tlove{color:#1c4f7a}
+  body.light table.traits .tpow{color:#8a5a16}
+  .pstep{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px 14px 40px;
+         position:relative;margin-bottom:12px}
+  .pstep .pn{position:absolute;left:10px;top:12px;width:22px;height:22px;border-radius:50%;
+             background:var(--accent);color:#0a0a14;font-weight:700;text-align:center;line-height:22px;font-size:12px}
+  .pmono{margin-top:8px}
+  .pyr{margin-top:10px;perspective:900px}
+  .player{display:flex;align-items:center;gap:2px;justify-content:center;
+          transform:rotateX(52deg) rotateZ(0deg);transform-origin:center;margin:-2px 0}
+  .pd{width:11px;height:11px;border-radius:2px;display:inline-block}
+  .plbl{font-size:9px;color:var(--muted);margin-left:8px;transform:rotateX(-52deg);white-space:nowrap}
+  .cnts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .cnt{border:1px solid;border-radius:8px;padding:4px 9px;font-size:12px}
+  .pyrwrap{max-width:560px}
+  .reading{max-width:760px;columns:2;column-gap:26px}
+  @media(max-width:860px){.reading{columns:1}}
+  .rdg{break-inside:avoid;background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+       padding:12px 14px;margin:0 0 14px}
+  .rdg h3{margin:0 0 6px;font-size:13px;color:var(--accent2);letter-spacing:.3px}
+  .rdg p{margin:0;font-size:13.5px;line-height:1.6;color:var(--ink)}
+  .taglines{display:flex;gap:18px;flex-wrap:wrap;margin:-8px 0 22px;color:var(--muted);font-size:12.5px}
+  .taglines b{color:var(--accent2)}
+  .credit{margin-top:26px;padding-top:16px;border-top:1px solid var(--line);
+          color:var(--muted);font-size:12px;text-align:center;line-height:1.7}
+  .credit b{color:var(--ink);letter-spacing:1px}
+  .scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .pyr,.triangle{overflow-x:auto}
+  @media(max-width:600px){
+    header{padding:16px 16px 6px}
+    header h1{font-size:16px}
+    header .sub{flex:1 1 100%}
+    .themebtn{margin-left:0}
+    .wrap{padding:0 12px 48px}
+    .controls{padding:12px;gap:10px}
+    .controls .name-in{min-width:0;width:100%}
+    .controls > div{flex:1 1 100%;min-width:0}
+    .lbl-note{display:none}
+    .btn{width:100%}
+    .taglines{gap:6px;flex-direction:column;margin-bottom:16px}
+    .card{padding:13px 13px}
+    .stat{flex:1 1 calc(50% - 7px);min-width:0}
+    table.traits td,table.traits th{padding:6px 7px;font-size:12px}
+    .reading{columns:1}
+    .tab{padding:7px 11px}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>✶ NAMEMAN Numerology Name Analyzer</h1>
+    <span class="sub">The Soular-System™ hidden in your name. Talents, elements, dimensions, centroid, and soul angle.</span>
+    <button class="themebtn" @click="toggleTheme">{{ theme==='dark' ? '☀ Light' : '☾ Dark' }}</button>
+  </header>
+  <div class="wrap">
+    <div class="controls">
+      <div>
+        <label>Full name</label>
+        <input class="name-in" v-model="name" @keyup.enter="run" placeholder="Enter a full name">
+      </div>
+      <div>
+        <label>Birth month <span class="lbl-note" style="text-transform:none;color:#667">(soul angle is name-only; date drives evolution)</span></label>
+        <select v-model.number="month">
+          <option v-for="(m,i) in months" :value="i+1">{{m}}</option>
+        </select>
+      </div>
+      <div>
+        <label>Day</label>
+        <select v-model.number="day">
+          <option v-for="d in 31" :value="d">{{d}}</option>
+        </select>
+      </div>
+      <button class="btn" @click="run">Click once for your numerology analysis</button>
+    </div>
+    <div class="taglines">
+      <span>✦ Discover the <b>powers</b> and <b>loves</b> of your name</span>
+      <span>✦ Find out which of your friends’ names are closest to yours</span>
+      <span>✦ See the elements, dimensions &amp; talents hidden in your name</span>
+    </div>
+
+    <div v-if="r">
+      <div class="nameLine" style="margin-bottom:14px">{{ r.name.toUpperCase() }}
+        <span style="font-size:12px;color:var(--muted);font-weight:400">born {{ r.monthName }} {{ r.dayNum }}</span>
+      </div>
+
+      <div class="grid">
+        <!-- LEFT: the soul star -->
+        <div class="card">
+          <h2>Soul Star · Talent Wheel</h2>
+          <p class="hint">Twelve sectors of 30° each. A circle's radius is set by its talent score, and each
+             circle touches the walls of its sector. The white sun sits at the area-weighted centroid. The inner zone hides talents under 100.</p>
+          <div v-html="charts.star"></div>
+          <div class="stat-row">
+            <div class="stat"><div class="k">Soul angle</div><div class="v">{{ r.soulAngle }}°</div></div>
+            <div class="stat"><div class="k">Quadrant</div><div class="v" style="font-size:15px">{{ r.quadrant.name }}</div></div>
+            <div class="stat"><div class="k">Strongest</div><div class="v">{{ r.ranked[0].digit }} · {{ r.ranked[0].score }}</div></div>
+            <div class="stat"><div class="k">Weakest</div><div class="v">{{ r.ranked[9].digit }} · {{ r.ranked[9].score }}</div></div>
+          </div>
+        </div>
+
+        <!-- RIGHT: rankings + elements + scales -->
+        <div>
+          <div class="card">
+            <h2>Talents: Dominant to Subordinant</h2>
+            <p class="hint">Digit frequency in the 365-digit pyramid, scaled to a 1000 base.</p>
+            <div v-html="charts.rank"></div>
+          </div>
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <h2>{{ band==='element' ? 'Elements' : 'Dimensions' }}</h2>
+              <div class="tabs" style="margin:0">
+                <div class="tab" :class="{on:band==='element'}" @click="band='element';draw()">Elements</div>
+                <div class="tab" :class="{on:band==='dimension'}" @click="band='dimension';draw()">Dimensions</div>
+              </div>
+            </div>
+            <p class="hint">Six colour bands over mirror-digits (purple 0 · blue 1,9 · green 2,8 · yellow 3,7 · orange 4,6 · red 5).</p>
+            <div v-html="charts.band"></div>
+          </div>
+          <div class="card">
+            <h2>Scales: every digit, 0 to 1000</h2>
+            <p class="hint">The raw talent gauge. The dashed line marks the hidden-talent threshold of 100.</p>
+            <div v-html="charts.scale"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Dimensions</h2>
+        <div class="tabs">
+          <div class="tab" :class="{on:tab==='reading'}" @click="tab='reading'">Written Reading</div>
+          <div class="tab" :class="{on:tab==='life'}" @click="tab='life'">Life Path</div>
+          <div class="tab" :class="{on:tab==='evo'}" @click="tab='evo'">Future Development</div>
+          <div class="tab" :class="{on:tab==='mandala'}" @click="tab='mandala'">Year Mandala</div>
+          <div class="tab" :class="{on:tab==='compass'}" @click="tab='compass'">Soul Compass</div>
+          <div class="tab" :class="{on:tab==='pyramid'}" @click="tab='pyramid'">Pyramid Explainer</div>
+          <div class="tab" :class="{on:tab==='music'}" @click="tab='music'">Music &amp; Stars</div>
+          <div class="tab" :class="{on:tab==='compat'}" @click="tab='compat'">Compatibility</div>
+          <div class="tab" :class="{on:tab==='traits'}" @click="tab='traits'">Loves &amp; Powers</div>
+          <div class="tab" :class="{on:tab==='tri'}" @click="tab='tri'">Numerology Triangle</div>
+          <div class="tab" :class="{on:tab==='raw'}" @click="tab='raw'">Raw data</div>
+        </div>
+        <div v-show="tab==='reading'">
+          <p class="hint">A written interpretation in the original's own voice. It covers your Soular System, Forces and Feelings, and magnetic direction.</p>
+          <div class="reading" v-html="charts.reading"></div>
+        </div>
+        <div v-show="tab==='mandala'">
+          <p class="hint">Your raw 365-digit fingerprint laid around the year. Each day is coloured by its
+             digit, and clusters of a colour are your dominant talents. The ★ marks your birthday. This is the
+             ring the pyramid produces, and the talent scores are simply a count of these colours.</p>
+          <div style="max-width:480px;margin:auto" v-html="charts.mandala"></div>
+        </div>
+        <div v-show="tab==='compass'">
+          <p class="hint">The soul angle ({{ r.soulAngle }}°) shown as a magnetic-direction dial. It is the
+             centroid of your talent star projected onto the four quadrants, the "projection pattern." Set by your name alone.</p>
+          <div style="max-width:400px;margin:auto" v-html="charts.compass"></div>
+        </div>
+        <div v-show="tab==='pyramid'">
+          <p class="hint">How a name becomes talent scores, step by step.</p>
+          <div class="pyrwrap scrollx" v-html="charts.pyramid"></div>
+        </div>
+        <div v-show="tab==='music'">
+          <p class="hint">From the original <i>Piano Keys &amp; the Seven Spinal Stars</i> diagram: the seven
+             musical keys sit on the colour ring, each star carrying a black + white key (B &amp; F are dual nature).
+             Here each star is sized by <b>your</b> strength in that colour, so your dominant talents are your
+             brightest stars. <span style="color:#caa">Chakra names below follow the traditional colour correspondence.
+             They are not written in the source image.</span></p>
+          <div class="grid">
+            <div style="max-width:440px" v-html="charts.music"></div>
+            <table class="traits"><thead><tr><th>Key</th><th>Colour → Element</th><th>Chakra (traditional)</th></tr></thead><tbody>
+              <tr><td class="tdim">B</td><td>Purple · Void</td><td>Crown</td></tr>
+              <tr><td class="tdim">C</td><td>Blue · Space</td><td>Throat</td></tr>
+              <tr><td class="tdim">D</td><td>Green · Air</td><td>Heart</td></tr>
+              <tr><td class="tdim">E</td><td>Orange · Water</td><td>Sacral</td></tr>
+              <tr><td class="tdim">F</td><td>Red · Earth</td><td>Root</td></tr>
+              <tr><td class="tdim">G</td><td>Yellow · Fire</td><td>Solar Plexus</td></tr>
+              <tr><td class="tdim">A</td><td>Blue · Space</td><td>Throat / Brow</td></tr>
+            </tbody></table>
+          </div>
+        </div>
+        <div v-show="tab==='compat'">
+          <p class="hint">Which names are closest to yours. This revives the original's "find out which of your friends'
+             names are closest to yours." Enter up to five friends' names, separated by commas. Closeness is the correlation of talent profiles.</p>
+          <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+            <input class="name-in" v-model="friends" @keyup.enter="runCompat" placeholder="ENTER NAMES OF FRIENDS (0 to 5), comma-separated">
+            <button class="btn" @click="runCompat">Compare</button>
+          </div>
+          <div class="grid">
+            <div class="scrollx" v-html="charts.compatList"></div>
+            <div v-html="charts.compatRadar"></div>
+          </div>
+        </div>
+        <div v-show="tab==='life'">
+          <div class="tabs" style="margin-bottom:8px">
+            <div class="tab" :class="{on:lifeStyle==='cable'}" @click="lifeStyle='cable';drawLife()">Life Cable (3-D)</div>
+            <div class="tab" :class="{on:lifeStyle==='stream'}" @click="lifeStyle='stream';drawLife()">Life Stream</div>
+            <span style="flex:1"></span>
+            <div class="tab" :class="{on:lifeAxis==='age'}" @click="lifeAxis='age';drawLife()">Age</div>
+            <div class="tab" :class="{on:lifeAxis==='year'}" @click="lifeAxis='year';drawLife()">Calendar</div>
+          </div>
+          <p class="hint">Each of the 10 talents is a strand; its thickness = its strength over time.
+             <b>Life Stream</b> is the additive “shape of your life” (total height = all talents combined);
+             <b>Life Cable</b> braids the same strands as 3-D tubes. Birth-date driven, like the pillars.</p>
+          <div style="max-width:700px;margin:auto" v-html="charts.life"></div>
+        </div>
+        <div v-show="tab==='traits'">
+          <p class="hint">Each colour band’s LOVES (receptive traits) and POWERS (active traits), from the printed report.
+             Circle size scales with the band’s score.</p>
+          <div v-html="charts.traits"></div>
+        </div>
+        <div v-show="tab==='evo'">
+          <div class="tabs" style="margin-bottom:8px">
+            <div class="tab" :class="{on:pillar==='age'}" @click="pillar='age';drawPillar()">By Age (0 to 90)</div>
+            <div class="tab" :class="{on:pillar==='year'}" @click="pillar='year';drawPillar()">By Calendar (Jan to Dec)</div>
+          </div>
+          <p class="hint">Wider paths mark times of greater opportunity. The grey shade shows karmic help,
+             with lighter meaning more. Coloured caps show the birth profile, and columns run left to right as digits 9 to 0.
+             <b>This is the only chart driven by the birth date.</b> The
+             {{ pillar==='age' ? 'age axis sweeps the year-ring from your birth angle' : 'calendar magnitudes are normalised at your birth day' }}.</p>
+          <div style="max-width:660px;margin:auto" v-html="charts.pillar"></div>
+        </div>
+        <div v-show="tab==='tri'">
+          <p class="hint">Rows B1 to B12 are the base 1 through base 12 reductions of the name number (78 digits).</p>
+          <div class="scrollx" v-html="charts.tri"></div>
+        </div>
+        <div v-show="tab==='raw'">
+          <p class="hint">Name number (base-12 reductions feed the pyramid).</p>
+          <div class="mono" style="margin-bottom:10px"><b>Name number:</b> {{ r.nameNum }}</div>
+          <div class="mono" style="margin-bottom:10px"><b>Digit counts (0-9):</b> {{ r.values.join('  ') }}</div>
+          <div class="mono" style="margin-bottom:10px"><b>Scores ×1000/365:</b> {{ r.scores.join('  ') }}</div>
+          <div class="mono"><b>365-digit pyramid string:</b><br>{{ r.numString }}</div>
+        </div>
+      </div>
+
+      <div class="gaps">
+        <h3>⚑ Interpretation notes &amp; gaps of uncertainty</h3>
+        <ul>
+          <li><b>Soul angle is name-only.</b> In the VB code the kernel at the birth day cancels its own normaliser, so the centroid (and angle) depend only on the name. Birth date only changes the <i>evolution</i> curves. (Confirmed by tracing SOUL_STAR.)</li>
+          <li><b>"Scales"</b> is the 0 to 1000 talent gauge. The <i>Music &amp; Stars</i> tab reproduces the original Piano-Keys and chakra diagram, sized by your colour strengths. That musical overlay is conceptual, not computed by any VB formula. The <b>chakra names</b> shown follow the traditional colour correspondence, since the source image writes none.</li>
+          <li><b>Quadrant labels.</b> Page 9 only defines the angle's quadrant (a cross at 0/90/180/270) for the "projection pattern." Its compass actually shows example <i>people</i> at the cardinal points, not zodiac or seasons, so quadrants are labelled neutrally (Quadrant I to IV by angle).</li>
+          <li><b>Sun size</b> uses the VB’s later formula √(total area)/4; the author’s own notes say its size “has no real meaning,” only its location/angle.</li>
+        </ul>
+      </div>
+
+      <footer class="credit">
+        <b>NAMEMAN</b> · Where Names Come To Life · Soular-System™ is a registered trademark ·
+        © NAMEMAN. Web rebuild faithful to the original Visual Basic analyzer.
+      </footer>
+    </div>
+  </div>
+</div>
+
+<script src="engine.js"></script>
+<script src="charts.js"></script>
+<script>
+const { createApp, reactive, ref, watch } = Vue;
+createApp({
+  setup(){
+    const name = ref('EXAMPLE NAME');
+    const month = ref(3), day = ref(1);
+    const months = NumEngine.MONTH_NAMES.map(m=>m.charAt(0)+m.slice(1).toLowerCase());
+    const r = ref(null);
+    const tab = ref('reading');
+    const band = ref('element');
+    const pillar = ref('year');
+    const lifeAxis = ref('age');
+    const lifeStyle = ref('cable');
+    const theme = ref('dark');
+    const friends = ref('ALPHA OMEGA, BETA GAMMA, DELTA SIGMA');
+    const charts = reactive({star:'',rank:'',band:'',scale:'',pillar:'',tri:'',traits:'',life:'',
+                             mandala:'',compass:'',pyramid:'',compatList:'',compatRadar:'',reading:'',music:''});
+    const opt = ()=>({theme:theme.value});
+    const palette = ['#66b2ff','#ff6b6b','#7CFFB2','#ffd166','#b266ff'];
+    function drawBand(){ if(r.value) charts.band = NumCharts.bandChart(r.value, band.value, opt()); }
+    function drawPillar(){ if(r.value) charts.pillar = NumCharts.pillarChart(r.value, pillar.value, opt()); }
+    function drawLife(){ if(r.value) charts.life = lifeStyle.value==='cable'
+        ? NumCharts.lifeCable(r.value, lifeAxis.value, opt())
+        : NumCharts.lifeStream(r.value, lifeAxis.value, opt()); }
+    function redraw(){
+      const res = r.value; if(!res) return;
+      charts.star = NumCharts.starChart(res, opt());
+      charts.rank = NumCharts.rankChart(res, opt());
+      charts.scale = NumCharts.scaleChart(res, opt());
+      charts.tri  = NumCharts.triangleHtml(res);
+      charts.traits = NumCharts.traitTable(res);
+      charts.mandala = NumCharts.yearMandala(res, opt());
+      charts.compass = NumCharts.soulCompass(res, opt());
+      charts.pyramid = NumCharts.pyramidExplainer(res);
+      charts.reading = NumCharts.readingHtml(res);
+      charts.music = NumCharts.musicChart(res, opt());
+      drawBand(); drawPillar(); drawLife(); runCompat();
+    }
+    function runCompat(){
+      const res = r.value; if(!res) return;
+      const list = friends.value.split(',').map(s=>s.trim()).filter(Boolean).slice(0,5);
+      const rows = list.map((nm,i)=>{
+        const ra = NumEngine.analyze(nm, {month:res.monthNum, day:res.dayNum});
+        const c = NumEngine.compare(res, ra);
+        return {name:nm, scores:ra.scores, ...c, stroke:palette[(i+1)%palette.length]};
+      }).sort((a,b)=>b.closeness-a.closeness);
+      // ranked list
+      let html = '<table class="traits"><thead><tr><th>Name</th><th>Closeness</th><th>Soul Δ</th><th>Shared</th></tr></thead><tbody>';
+      rows.forEach(x=>{
+        html += '<tr><td class="tdim">'+x.name+'</td><td><div style="display:flex;align-items:center;gap:6px">'+
+          '<div style="height:9px;width:'+x.closeness+'px;max-width:120px;border-radius:4px;background:'+x.stroke+'"></div>'+x.closeness+'%</div></td>'+
+          '<td>'+x.angleDelta+'°</td><td>'+(x.shared.length?x.shared.join(', '):'none')+'</td></tr>';
+      });
+      html += '</tbody></table>';
+      charts.compatList = html;
+      // overlaid radar: primary + each friend
+      const series = [{label:res.name, scores:res.scores, stroke:palette[0]}].concat(
+        rows.map(x=>({label:x.name, scores:x.scores, stroke:x.stroke})));
+      charts.compatRadar = NumCharts.radarChart(series, opt());
+    }
+    function run(){
+      if(!name.value.trim()) return;
+      r.value = NumEngine.analyze(name.value, {month:month.value, day:day.value});
+      redraw();
+    }
+    function toggleTheme(){ theme.value = theme.value==='dark' ? 'light' : 'dark'; }
+    watch(theme, v=>{ document.body.classList.toggle('light', v==='light'); redraw(); }, {immediate:true});
+    run();
+    return { name, month, day, months, r, tab, band, pillar, lifeAxis, lifeStyle, theme, friends, charts,
+             run, drawBand, drawPillar, drawLife, runCompat, toggleTheme, draw:drawBand };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>

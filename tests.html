@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Numerology Engine Eval Suite</title>
+<style>
+  body{background:#0b0b14;color:#e8e9f3;font:14px/1.6 ui-monospace,Consolas,monospace;margin:0;padding:24px}
+  h1{font-size:18px}
+  .ok{color:#7CFFB2}.fail{color:#ff7c7c;font-weight:700}
+  .grp{color:#66b2ff;margin-top:16px;font-weight:700}
+  .summary{font-size:18px;margin-top:20px;padding:12px 16px;border-radius:10px;display:inline-block}
+  .green{background:#0e2a18;color:#7CFFB2}.red{background:#2a0e0e;color:#ff7c7c}
+  table{border-collapse:collapse;margin:10px 0}
+  td,th{border:1px solid #262640;padding:4px 10px;text-align:right}
+  th{color:#9aa0b8}
+</style>
+</head>
+<body>
+<h1>✶ Numerology Engine Eval Suite</h1>
+<p>Validates the JS engine against the documented math, internal invariants, and a frozen
+   regression on a neutral example name. (The engine was also validated offline against the
+   original application's reference charts; those name-specific fixtures are kept out of this repo.)</p>
+<div id="out"></div>
+<div id="sum"></div>
+
+<script src="engine.js"></script>
+<script>
+const E = NumEngine;
+const out = document.getElementById('out');
+let pass=0, fail=0;
+function line(cls,txt){ const d=document.createElement('div'); d.className=cls; d.textContent=txt; out.appendChild(d); }
+function grp(t){ line('grp', t); }
+function ok(name, cond, extra){ if(cond){pass++;line('ok','  ✓ '+name);} else {fail++;line('fail','  ✗ '+name+(extra?'  -> '+extra:''));} }
+function eq(name, got, want){ ok(name+'  (got '+JSON.stringify(got)+')', JSON.stringify(got)===JSON.stringify(want), 'want '+JSON.stringify(want)); }
+
+const NAME = 'EXAMPLE NAME';   // neutral example used throughout
+
+grp('1. Letter cipher');
+eq('A', E.name2num('A'), '000000000001');
+eq('Z', E.name2num('Z'), '000000000026');
+eq('CAB', E.name2num('CAB'), '000000030102');
+eq('spaces skipped', E.name2num('A B'), '000000000102');
+
+grp('2. BASING digital roots (notes pages 2-5)');
+const b1=s=>E.basing(s,1)[1];
+eq('B1(69873)', b1('69873'),'6'); eq('B1(277058)', b1('277058'),'2');
+eq('B1(346931)', b1('346931'),'8'); eq('B1(2375720760)', b1('2375720760'),'3');
+eq('B1(47632)', b1('47632'),'4');
+
+grp('3. Name number base-12');
+const nn=E.name2num(NAME);
+eq('base-12 has 12 digits', E.basing(nn,12)[12].length, 12);
+
+grp('4. Pyramid sizes (notes pages 6-7)');
+const sn=E.stringNum(nn);
+let tri=0; for(let z=1;z<=12;z++) tri+=sn.firstLevels[z].length;
+eq('triangle 78 digits', tri, 78);
+eq('NUM_STRING 365', sn.numString.length, 365);
+
+grp('5. Invariants');
+const r=E.analyze(NAME);
+eq('values sum 365', r.values.reduce((a,b)=>a+b,0), 365);
+ok('case-insensitive', JSON.stringify(E.analyze(NAME.toLowerCase()).scores)===JSON.stringify(r.scores));
+ok('soul angle in [0,360)', r.soulAngle>=0 && r.soulAngle<360);
+ok('soul angle date-independent', E.analyze(NAME,{month:9,day:28}).soulAngle===r.soulAngle);
+
+grp('6. Frozen regression (locks engine behaviour)');
+eq('base-12', E.basing(nn,12)[12], '121038022621');
+eq('values', r.values, [44,57,58,49,41,25,22,27,24,18]);
+eq('scores', r.scores, [121,156,159,134,112,68,60,74,66,49]);
+eq('soul angle', r.soulAngle, 62);
+eq('ranked', r.ranked.map(x=>x.digit), [2,1,3,0,4,7,5,8,6,9]);
+
+grp('7. Score table (' + NAME + ')');
+(function(){
+  const t=document.createElement('table');
+  let h='<tr><th>digit</th>'; for(let d=0;d<10;d++) h+='<th>'+d+'</th>'; h+='</tr>';
+  let g='<tr><th>score</th>'; for(let d=0;d<10;d++) g+='<td>'+r.scores[d]+'</td>'; g+='</tr>';
+  t.innerHTML=h+g; out.appendChild(t);
+})();
+
+const sum=document.getElementById('sum');
+sum.innerHTML='<div class="summary '+(fail?'red':'green')+'">'+pass+' passed, '+fail+' failed</div>';
+</script>
+</body>
+</html>

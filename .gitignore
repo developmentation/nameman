@@ -1,0 +1,6 @@
+# local preview/screenshot artifacts (regenerable, not part of the site)
+shot_*.png
+_*
+*.tmp
+.DS_Store
+Thumbs.db
