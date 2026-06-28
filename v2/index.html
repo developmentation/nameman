@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NAMEMAN — Numerology Name Analyzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<style>
+  /* ===== NAMEMAN design system ===== */
+  body.light{
+    --bg:#FBFAF8; --panel:#FFFFFF; --panel2:#FBFAF8; --ink:#18171F;
+    --muted:#9A98A4; --muted2:#6B6A75; --line:#ECEAE4; --accent:#6C5CE0; --accent2:#6C5CE0;
+    --brandText:#6C5CE0; --track:#EFEDE6; --bgGrad:#FBFAF8;
+  }
+  :root{ /* cosmic dark */
+    --bg:#0A0913; --panel:#15131F; --panel2:#1B1930; --ink:#EDEBFA;
+    --muted:#8E8AAE; --muted2:#B9B4E6; --line:rgba(255,255,255,.10); --accent:#6C5CE0; --accent2:#9A8BFF;
+    --brandText:#9A8BFF; --track:rgba(255,255,255,.09); --bgGrad:radial-gradient(1200px 820px at 70% -12%,#1C1A38,#0A0913 62%);
+  }
+  *{box-sizing:border-box}
+  html,body{max-width:100%;overflow-x:hidden}
+  body{margin:0;background:var(--bgGrad);color:var(--ink);
+       font:15px/1.55 'Hanken Grotesk',system-ui,sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased}
+  svg text{font-family:'Geist Mono',ui-monospace,monospace}
+  ::selection{background:#6C5CE0;color:#fff}
+  .mono{font-family:'Geist Mono',ui-monospace,monospace}
+  /* sticky app header */
+  header{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+         padding:14px 26px;background:color-mix(in srgb,var(--bg) 82%,transparent);
+         backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+  header .brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:18px;letter-spacing:-.02em}
+  header .brand svg{display:block}
+  header .sub{display:none}
+  header h1{display:none}
+  header .spacer{flex:1}
+  .themebtn{background:var(--panel);border:1px solid var(--line);color:var(--ink);
+            border-radius:99px;padding:8px 16px;cursor:pointer;font-size:12.5px;font-weight:600;font-family:inherit}
+  .themebtn:hover{border-color:var(--accent);color:var(--accent)}
+  /* dark cosmic hero */
+  .hero{position:relative;overflow:hidden;text-align:center;color:#fff;padding:88px 26px 92px;
+        background:radial-gradient(120% 90% at 50% -10%,#1C1A38 0%,#100E22 48%,#0A0913 100%)}
+  .hero .stars{position:absolute;inset:0;opacity:.8;background-image:
+    radial-gradient(1.4px 1.4px at 12% 24%,rgba(255,255,255,.7),transparent),
+    radial-gradient(1.2px 1.2px at 78% 16%,rgba(255,255,255,.6),transparent),
+    radial-gradient(1.6px 1.6px at 34% 70%,rgba(255,255,255,.5),transparent),
+    radial-gradient(1.2px 1.2px at 64% 60%,rgba(255,255,255,.55),transparent),
+    radial-gradient(1.3px 1.3px at 90% 78%,rgba(255,255,255,.5),transparent),
+    radial-gradient(1.1px 1.1px at 22% 88%,rgba(255,255,255,.45),transparent)}
+  .hero .glow{position:absolute;top:-160px;right:-120px;width:520px;height:520px;border-radius:50%;
+    background:radial-gradient(circle,rgba(108,92,224,.34),transparent 62%);filter:blur(8px)}
+  .hero .inner{position:relative;max-width:900px;margin:0 auto}
+  .hero .eyebrow{display:inline-flex;align-items:center;gap:8px;font-family:'Geist Mono',monospace;font-size:11px;
+    letter-spacing:.2em;text-transform:uppercase;color:#B9B4E6;border:1px solid rgba(255,255,255,.16);
+    border-radius:99px;padding:7px 15px;margin-bottom:28px}
+  .hero h1.title{font-size:84px;line-height:.94;font-weight:800;letter-spacing:-.045em;margin:0;
+    display:flex;align-items:center;justify-content:center;gap:18px}
+  .hero h1.title svg{animation:spin 60s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .hero p.lede{font-size:20px;line-height:1.45;color:#C9C6DD;max-width:640px;margin:22px auto 30px}
+  .hero .cta{font-family:inherit;font-size:15px;font-weight:600;color:#fff;background:#6C5CE0;border:none;
+    border-radius:12px;padding:13px 26px;cursor:pointer;box-shadow:0 10px 30px rgba(108,92,224,.4)}
+  .hero .cta:hover{background:#7d6ee8}
+  @media(max-width:640px){ .hero h1.title{font-size:54px} .hero{padding:60px 20px 64px} }
+  .wrap{max-width:1280px;margin:0 auto;padding:0 20px 60px}
+  .controls{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;
+            background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:10px 0 22px}
+  .controls label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:5px}
+  .controls input,.controls select{background:var(--panel2);border:1px solid var(--line);color:var(--ink);
+            border-radius:9px;padding:10px 12px;font-size:16px;outline:none;max-width:100%}
+  .controls input:focus,.controls select:focus{border-color:var(--accent)}
+  .controls .name-in{min-width:280px}
+  .btn{background:#6C5CE0;border:none;color:#fff;font-family:inherit;
+       font-weight:600;padding:13px 24px;border-radius:11px;cursor:pointer;font-size:14.5px;
+       box-shadow:0 6px 18px rgba(108,92,224,.28);white-space:nowrap}
+  .btn:hover{background:#5B4BD0;box-shadow:0 10px 26px rgba(108,92,224,.36)}
+  .btn:active{background:#5040c0}
+  .btn:disabled{background:#C9C5DE;box-shadow:none;cursor:default}
+  .grid{display:grid;grid-template-columns:minmax(420px,1.2fr) 1fr;gap:18px;align-items:start}
+  @media(max-width:980px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px 24px;margin-bottom:18px}
+  .card h2{margin:0 0 4px;font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;color:var(--brandText)}
+  .card .hint{color:var(--muted2,var(--muted));font-size:12.5px;line-height:1.5;margin:0 0 14px}
+  .starsvg,.barsvg,.evosvg{width:100%;height:auto;display:block;border-radius:10px}
+  .stat-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px 15px;min-width:110px;flex:1}
+  .stat .k{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+  .stat .v{font-size:18px;font-weight:700;margin-top:5px;font-family:'Geist Mono',monospace;color:var(--brandText)}
+  .triangle{font-family:ui-monospace,Consolas,monospace;text-align:center;line-height:1.1}
+  .trow{white-space:nowrap;margin:1px 0}
+  .tlbl{display:inline-block;width:30px;color:var(--muted);font-size:10px;text-align:right;margin-right:6px}
+  .td{display:inline-block;width:17px;height:17px;line-height:17px;margin:1px;border-radius:3px;
+      color:#111;font-weight:700;font-size:11px}
+  .tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+  .tab{padding:8px 15px;border-radius:99px;background:var(--panel);border:1px solid var(--line);
+       cursor:pointer;font-size:12.5px;font-weight:600;color:var(--muted2,var(--muted));font-family:inherit}
+  .tab:hover{border-color:var(--accent);color:var(--accent)}
+  .tab.on{background:var(--accent);color:#fff;font-weight:600;border-color:transparent}
+  .mono{font-family:ui-monospace,Consolas,monospace;font-size:11px;color:var(--muted);word-break:break-all}
+  .nameLine{font-size:18px;font-weight:700;letter-spacing:1px}
+  #analyzer{scroll-margin-top:72px}
+  .taglines{display:flex;gap:18px;flex-wrap:wrap;margin:-6px 0 22px;color:var(--muted);font-size:12.5px}
+  .taglines b{color:var(--brandText)}
+  .resulthead{text-align:center;margin:8px 0 22px}
+  .map-of{font-size:11px!important;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)!important;word-break:normal!important}
+  .result-name{font-size:40px;font-weight:800;letter-spacing:-.03em;margin:6px 0 4px;line-height:1.02}
+  .result-born{font-size:13px!important;color:var(--muted)!important;letter-spacing:.04em;word-break:normal!important}
+  .gaps{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 22px;margin-top:18px;font-size:13px}
+  .gaps h3{margin:0 0 10px;color:var(--brandText);font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:700}
+  .gaps li{margin:6px 0;color:var(--muted2,var(--muted));line-height:1.55}
+  .sitefoot{max-width:1280px;margin:30px auto 0;padding:22px 26px 50px;border-top:1px solid var(--line);
+            color:var(--muted);font-size:12.5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .sitefoot .brand{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--ink)}
+  .sitefoot .dot{color:var(--line)}
+  .sitefoot a{color:var(--brandText);text-decoration:none;font-weight:600}
+  .sitefoot a:hover{text-decoration:underline}
+  .legend{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:8px}
+  .legend span{display:inline-flex;align-items:center;gap:4px}
+  .legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
+  table.traits{width:100%;border-collapse:collapse;font-size:13px}
+  table.traits th{text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;
+                  letter-spacing:.5px;padding:6px 10px;border-bottom:1px solid var(--line)}
+  table.traits td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+  table.traits .tcirc{width:46px;text-align:center}
+  table.traits .dot{display:inline-block;border-radius:50%;border:1px solid #000}
+  table.traits .tdim{font-weight:700;white-space:nowrap}
+  table.traits .tdim small{font-weight:400;color:var(--muted)}
+  table.traits .tlove{color:#bfe0ff}
+  table.traits .tpow{color:#ffd9a8}
+  body.light table.traits .tlove{color:#1c4f7a}
+  body.light table.traits .tpow{color:#8a5a16}
+  .pstep{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px 14px 40px;
+         position:relative;margin-bottom:12px}
+  .pstep .pn{position:absolute;left:10px;top:12px;width:22px;height:22px;border-radius:50%;
+             background:var(--accent);color:#0a0a14;font-weight:700;text-align:center;line-height:22px;font-size:12px}
+  .pmono{margin-top:8px}
+  .pyr3d{margin-top:12px;text-align:center;overflow:visible}
+  .pyrsvg{width:100%;height:auto;max-width:520px;
+          transform:perspective(900px) rotateX(14deg);transform-origin:center 55%}
+  @media(max-width:600px){ .pyrsvg{transform:perspective(700px) rotateX(10deg)} }
+  .cnts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .cnt{border:1px solid;border-radius:8px;padding:4px 9px;font-size:12px}
+  .pyrwrap{max-width:560px}
+  .reading{max-width:760px;columns:2;column-gap:26px}
+  @media(max-width:860px){.reading{columns:1}}
+  .rdg{break-inside:avoid;background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+       padding:12px 14px;margin:0 0 14px}
+  .rdg h3{margin:0 0 6px;font-size:13px;color:var(--accent2);letter-spacing:.3px}
+  .rdg p{margin:0;font-size:13.5px;line-height:1.6;color:var(--ink)}
+  .taglines{display:flex;gap:18px;flex-wrap:wrap;margin:-8px 0 22px;color:var(--muted);font-size:12.5px}
+  .taglines b{color:var(--accent2)}
+  .credit{margin-top:26px;padding-top:16px;border-top:1px solid var(--line);
+          color:var(--muted);font-size:12px;text-align:center;line-height:1.7}
+  .credit b{color:var(--ink);letter-spacing:1px}
+  .letters{display:flex;flex-wrap:wrap;gap:6px}
+  .lchip{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:34px;padding:0 9px;
+    border-radius:8px;font-weight:700;font-size:16px;cursor:pointer;border:2px solid transparent;user-select:none}
+  .lchip.on{border-color:var(--ink);box-shadow:0 0 0 2px var(--accent)}
+  .infl{margin:0;padding-left:20px}.infl li{margin:3px 0}
+  .agebar{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+  .agebar input[type=range]{flex:1 1 240px;accent-color:var(--accent);height:26px}
+  .ageval{font-size:13px}
+  .notes{display:flex;flex-wrap:wrap;gap:6px}
+  .nchip{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;
+    width:34px;height:40px;border-radius:8px;font-weight:700;font-size:15px;border:1px solid rgba(0,0,0,.25);
+    transition:transform .08s ease,box-shadow .08s ease}
+  .nchip small{font-size:8px;font-weight:600;opacity:.75}
+  .nchip.lit{transform:translateY(-4px) scale(1.14);box-shadow:0 5px 16px rgba(120,80,255,.6);outline:2px solid #fff}
+  /* ---- printable report (hidden on screen, shown when printing) ---- */
+  #report{display:none}
+  #report .rtitle{font-size:22px;font-weight:800;letter-spacing:.3px;margin:0 0 2px}
+  #report .rsub{color:#555;font-size:12px;margin:0 0 14px}
+  #report .rsec{page-break-inside:avoid;break-inside:avoid;margin:0 0 9mm}
+  #report h2{font-size:13px;text-transform:uppercase;letter-spacing:.7px;color:#6a3df0;
+             border-bottom:1px solid #ddd;padding-bottom:3px;margin:0 0 8px}
+  #report svg{width:100%;height:auto;display:block;margin:0 auto}
+  #report .rstar{max-width:120mm}
+  #report .rcompass{max-width:78mm}
+  #report .rwide{max-width:165mm}
+  #report .rrow{display:flex;gap:8mm;flex-wrap:wrap;align-items:flex-start}
+  #report .rrow > div{flex:1 1 70mm;min-width:0}
+  #report table{width:100%;border-collapse:collapse;font-size:11px;margin-top:4px}
+  #report td,#report th{border:1px solid #d9d9e3;padding:4px 7px;text-align:left;vertical-align:top}
+  #report th{background:#f3f3fb;color:#444;font-size:10px;text-transform:uppercase;letter-spacing:.4px}
+  #report .rread{display:grid;grid-template-columns:1fr 1fr;gap:5mm 8mm;font-size:12px}
+  #report .rread .rp{break-inside:avoid;margin:0}
+  #report .rread h3{margin:0 0 3px;font-size:12px;color:#6a3df0}
+  #report .rmono{font-family:ui-monospace,Consolas,monospace;font-size:9.5px;color:#444;word-break:break-all}
+  #report .pyrsvg{transform:none}
+  #report .pstep{background:#f6f6fb;border:1px solid #e2e2ee;color:#222}
+  #report .pstep .pn{background:#6a3df0;color:#fff}
+  #report .traits .tlove{color:#1c4f7a}
+  #report .traits .tpow{color:#8a5a16}
+  #report .traits td,#report .traits th{color:#222}
+  #report .rcredit{margin-top:8mm;border-top:1px solid #ddd;padding-top:6px;color:#777;font-size:10px;text-align:center}
+  @media print{
+    @page{ size:A4; margin:13mm; }
+    body{background:#fff !important;color:#111}
+    #app > header{display:none !important}
+    .wrap > *:not(#report){display:none !important}
+    #report{display:block !important}
+    .nchip,.lchip{box-shadow:none !important}
+  }
+  .scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .triangle{overflow-x:auto}
+  @media(max-width:600px){
+    header{padding:16px 16px 6px}
+    header h1{font-size:16px}
+    header .sub{flex:1 1 100%}
+    .themebtn{margin-left:0}
+    .wrap{padding:0 12px 48px}
+    .controls{padding:12px;gap:10px}
+    .controls .name-in{min-width:0;width:100%}
+    .controls > div{flex:1 1 100%;min-width:0}
+    .controls > div:nth-child(2){flex:1 1 58%}   /* birth month */
+    .controls > div:nth-child(3){flex:1 1 30%}   /* day, same line as month */
+    .controls select{width:100%}
+    .lbl-note{display:none}
+    .btn{flex:1 1 100%;width:100%}
+    .taglines{gap:6px;flex-direction:column;margin-bottom:16px}
+    .card{padding:13px 13px}
+    .stat{flex:1 1 calc(50% - 7px);min-width:0}
+    table.traits td,table.traits th{padding:6px 7px;font-size:12px}
+    .reading{columns:1}
+    .tab{padding:7px 11px}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <span class="brand">
+      <svg width="20" height="20" viewBox="0 0 24 24"><g stroke="#6C5CE0" stroke-width="1.6" stroke-linecap="round"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="4.9" y1="4.9" x2="19.1" y2="19.1"/><line x1="19.1" y1="4.9" x2="4.9" y2="19.1"/></g><circle cx="12" cy="12" r="2.4" fill="#6C5CE0"/></svg>
+      nameman
+    </span>
+    <span class="spacer"></span>
+    <button class="themebtn" @click="downloadPDF" :disabled="pdfBusy">{{ pdfBusy ? '… Generating' : '↓ PDF' }}</button>
+    <button class="themebtn" @click="toggleTheme">{{ theme==='dark' ? '☀ Light' : '☾ Dark' }}</button>
+  </header>
+
+  <!-- dark cosmic hero -->
+  <section class="hero">
+    <div class="stars"></div><div class="glow"></div>
+    <div class="inner">
+      <div class="eyebrow">The Soular-System™ · the map of a name</div>
+      <h1 class="title">
+        <svg width="60" height="60" viewBox="0 0 24 24"><g stroke="#9A8BFF" stroke-width="1.3" stroke-linecap="round"><line x1="12" y1="1.5" x2="12" y2="22.5"/><line x1="1.5" y1="12" x2="22.5" y2="12"/><line x1="4.5" y1="4.5" x2="19.5" y2="19.5"/><line x1="19.5" y1="4.5" x2="4.5" y2="19.5"/></g><circle cx="12" cy="12" r="2.6" fill="#fff"/></svg>
+        nameman
+      </h1>
+      <p class="lede">The numerology platform that reveals the talents, elements and dimensions hidden inside any name, rendered as a living map of the self.</p>
+      <button class="cta" @click="scrollToAnalyzer">Map your name ↓</button>
+    </div>
+  </section>
+
+  <div class="wrap" id="analyzer">
+    <div class="controls">
+      <div>
+        <label>Full name</label>
+        <input class="name-in" v-model="name" @keyup.enter="run" placeholder="Enter a full name">
+      </div>
+      <div>
+        <label>Birth month <span class="lbl-note" style="text-transform:none;color:#667">(soul angle is name-only; date drives evolution)</span></label>
+        <select v-model.number="month">
+          <option v-for="(m,i) in months" :value="i+1">{{m}}</option>
+        </select>
+      </div>
+      <div>
+        <label>Day</label>
+        <select v-model.number="day">
+          <option v-for="d in 31" :value="d">{{d}}</option>
+        </select>
+      </div>
+      <button class="btn" @click="run">Analyze →</button>
+    </div>
+    <div class="taglines">
+      <span>✦ Discover the <b>powers</b> and <b>loves</b> of your name</span>
+      <span>✦ Find out which of your friends’ names are closest to yours</span>
+      <span>✦ See the elements, dimensions &amp; talents hidden in your name</span>
+    </div>
+
+    <div v-if="r">
+      <div class="resulthead">
+        <div class="map-of mono">THE MAP OF</div>
+        <h2 class="result-name">{{ r.name }}</h2>
+        <div class="result-born mono">born {{ r.monthName.charAt(0)+r.monthName.slice(1).toLowerCase() }} {{ r.dayNum }}</div>
+      </div>
+
+      <div class="grid">
+        <!-- LEFT: the soul star -->
+        <div class="card">
+          <h2>Soul Star · Talent Wheel</h2>
+          <p class="hint">Twelve sectors of 30° each. A circle's radius is set by its talent score, and each
+             circle touches the walls of its sector. The white sun sits at the area-weighted centroid. The inner zone hides talents under 100.</p>
+          <div v-html="charts.star"></div>
+          <div class="stat-row">
+            <div class="stat"><div class="k">Soul angle</div><div class="v">{{ r.soulAngle }}°</div></div>
+            <div class="stat"><div class="k">Quadrant</div><div class="v" style="font-size:15px">{{ r.quadrant.name }}</div></div>
+            <div class="stat"><div class="k">Strongest</div><div class="v">{{ r.ranked[0].digit }} · {{ r.ranked[0].score }}</div></div>
+            <div class="stat"><div class="k">Weakest</div><div class="v">{{ r.ranked[9].digit }} · {{ r.ranked[9].score }}</div></div>
+          </div>
+        </div>
+
+        <!-- RIGHT: rankings + elements + scales -->
+        <div>
+          <div class="card">
+            <h2>Talents: Dominant to Subordinant</h2>
+            <p class="hint">Digit frequency in the 365-digit pyramid, scaled to a 1000 base.</p>
+            <div v-html="charts.rank"></div>
+          </div>
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <h2>{{ band==='element' ? 'Elements' : 'Dimensions' }}</h2>
+              <div class="tabs" style="margin:0">
+                <div class="tab" :class="{on:band==='element'}" @click="band='element';draw()">Elements</div>
+                <div class="tab" :class="{on:band==='dimension'}" @click="band='dimension';draw()">Dimensions</div>
+              </div>
+            </div>
+            <p class="hint">Six colour bands over mirror-digits (purple 0 · blue 1,9 · green 2,8 · yellow 3,7 · orange 4,6 · red 5).</p>
+            <div v-html="charts.band"></div>
+          </div>
+          <div class="card">
+            <h2>Scales: every digit, 0 to 1000</h2>
+            <p class="hint">The raw talent gauge. The dashed line marks the hidden-talent threshold of 100.</p>
+            <div v-html="charts.scale"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Dimensions</h2>
+        <div class="tabs">
+          <div class="tab" :class="{on:tab==='reading'}" @click="tab='reading'">Written Reading</div>
+          <div class="tab" :class="{on:tab==='life'}" @click="tab='life'">Life Path</div>
+          <div class="tab" :class="{on:tab==='evo'}" @click="tab='evo'">Future Development</div>
+          <div class="tab" :class="{on:tab==='mandala'}" @click="tab='mandala'">Year Mandala</div>
+          <div class="tab" :class="{on:tab==='compass'}" @click="tab='compass'">Soul Compass</div>
+          <div class="tab" :class="{on:tab==='pyramid'}" @click="tab='pyramid'">Pyramid Explainer</div>
+          <div class="tab" :class="{on:tab==='music'}" @click="tab='music'">Music &amp; Stars</div>
+          <div class="tab" :class="{on:tab==='letters'}" @click="tab='letters'">Letter Influence</div>
+          <div class="tab" :class="{on:tab==='age'}" @click="tab='age'">Age Explorer</div>
+          <div class="tab" :class="{on:tab==='sound'}" @click="tab='sound'">Hear Your Name</div>
+          <div class="tab" :class="{on:tab==='compat'}" @click="tab='compat'">Compatibility</div>
+          <div class="tab" :class="{on:tab==='traits'}" @click="tab='traits'">Loves &amp; Powers</div>
+          <div class="tab" :class="{on:tab==='tri'}" @click="tab='tri'">Numerology Triangle</div>
+          <div class="tab" :class="{on:tab==='raw'}" @click="tab='raw'">Raw data</div>
+        </div>
+        <div v-show="tab==='reading'">
+          <p class="hint">A written interpretation of your name, covering your Soular System, Forces and Feelings, and magnetic direction.</p>
+          <div class="reading" v-html="charts.reading"></div>
+        </div>
+
+        <div v-show="tab==='letters'" v-if="influence && influence.letters.length">
+          <p class="hint">Every letter pulls your profile a little. Tap a letter to see how much it adds to
+             (or holds back) each talent. Brighter letters shape you more.</p>
+          <div class="letters">
+            <span v-for="(L,i) in influence.letters" :key="i"
+                  class="lchip" :class="{on:i===selLetter}"
+                  :style="{background:heat(L.magnitude), color: L.magnitude>maxMag*0.5 ? '#0a0a14':'var(--ink)'}"
+                  @click="selectLetter(i)">{{ L.char }}</span>
+          </div>
+          <div class="grid" style="margin-top:10px">
+            <div>
+              <div style="font-size:13px;margin-bottom:6px">Contribution of
+                <b :style="{color:'var(--accent2)'}">“{{ influence.letters[selLetter].char }}”</b>
+                to each talent (positive = it boosts that talent):</div>
+              <div v-html="charts.delta"></div>
+            </div>
+            <div>
+              <div style="font-size:13px;margin-bottom:6px">Most influential letters</div>
+              <ol class="infl">
+                <li v-for="(L,k) in topLetters" :key="k" @click="selectLetter(L.index)" style="cursor:pointer">
+                  <b>{{ L.char }}</b> <span style="color:var(--muted)">influence {{ L.magnitude }}</span>
+                </li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <div v-show="tab==='age'" v-if="ageRows">
+          <p class="hint">Drag through your life. Your talents rise and fall as the <b>year-ring</b> turns from your
+             birth angle, so the mix at age 6 is not the mix at age 60.
+             <span style="color:var(--muted)">The year-ring is your 365-day fingerprint (one digit per day of the year, the same
+             ring shown in the Year Mandala). Each year of life advances one step around it from your birth position.</span></p>
+          <div class="agebar">
+            <input type="range" min="0" max="90" step="1" v-model.number="age" @input="onAge">
+            <div class="ageval">Age <b>{{ age }}</b> · strongest now: <b :style="{color:topAtAge.color}">talent {{ topAtAge.digit }}</b></div>
+          </div>
+          <div style="max-width:360px" v-html="charts.age"></div>
+        </div>
+
+        <div v-show="tab==='sound'" v-if="noteSeq.length">
+          <p class="hint">Hear your name. Each letter becomes the musical note of its colour band
+             (the same B/C/D/E/F/G mapping as Music &amp; Stars), played in order.</p>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+            <button class="btn" @click="playing ? stopName() : playName()">{{ playing ? '◼ Stop' : '▶ Play your name' }}</button>
+            <span style="color:var(--muted);font-size:12px">{{ noteSeq.length }} notes</span>
+          </div>
+          <div class="notes">
+            <span v-for="(n,i) in noteSeq" :key="i" class="nchip" :class="{lit:i===playIndex}"
+                  :style="{background:n.color, color:'#0a0a14'}">{{ n.char }}<small>{{ n.note }}</small></span>
+          </div>
+        </div>
+        <div v-show="tab==='mandala'">
+          <p class="hint">Your raw 365-digit fingerprint laid around the year. Each day is coloured by its
+             digit, and clusters of a colour are your dominant talents. The ★ marks your birthday. This is the
+             ring the pyramid produces, and the talent scores are simply a count of these colours.</p>
+          <div style="max-width:480px;margin:auto" v-html="charts.mandala"></div>
+        </div>
+        <div v-show="tab==='compass'">
+          <p class="hint">The soul angle ({{ r.soulAngle }}°) shown as a magnetic-direction dial. It is the
+             centroid of your talent star projected onto the four quadrants, the "projection pattern." Set by your name alone.</p>
+          <div style="max-width:400px;margin:auto" v-html="charts.compass"></div>
+        </div>
+        <div v-show="tab==='pyramid'">
+          <p class="hint">How a name becomes talent scores, step by step.</p>
+          <div class="pyrwrap scrollx" v-html="charts.pyramid"></div>
+        </div>
+        <div v-show="tab==='music'">
+          <p class="hint"><i>Music &amp; the Numerology Circle.</i> The 12 sectors hold the digits 0,0,1,2,3,4,5,5,6,7,8,9,
+             where <b>0 and 5 are twin sectors</b> at the top and bottom. The 12 chromatic music notes sit at the sector
+             edges (B at top, F at bottom): white keys are light, black keys (♯) are dark. <b>B and F are dual-nature</b>
+             keys (the 0 and 5 keys, both black and white), where a melody can cross from all-white to all-black keys.
+             <span style="color:#caa">The 7 white keys map to the 7 chakras; chakra names below follow the traditional colour correspondence.</span></p>
+          <div class="grid">
+            <div style="max-width:440px" v-html="charts.music"></div>
+            <table class="traits"><thead><tr><th>Key</th><th>Colour → Element</th><th>Chakra (traditional)</th></tr></thead><tbody>
+              <tr><td class="tdim">B</td><td>Purple · Void</td><td>Crown</td></tr>
+              <tr><td class="tdim">C</td><td>Blue · Space</td><td>Throat</td></tr>
+              <tr><td class="tdim">D</td><td>Green · Air</td><td>Heart</td></tr>
+              <tr><td class="tdim">E</td><td>Orange · Water</td><td>Sacral</td></tr>
+              <tr><td class="tdim">F</td><td>Red · Earth</td><td>Root</td></tr>
+              <tr><td class="tdim">G</td><td>Yellow · Fire</td><td>Solar Plexus</td></tr>
+              <tr><td class="tdim">A</td><td>Blue · Space</td><td>Throat / Brow</td></tr>
+            </tbody></table>
+          </div>
+        </div>
+        <div v-show="tab==='compat'">
+          <p class="hint">Find out which names are closest to yours. Enter up to five names, separated by commas.
+             <b>Closeness</b> is the correlation of their talent profiles with yours.
+             <b>Soul Δ</b> is the gap, in degrees, between their soul angle and yours, the soul angle being the
+             direction of your talent star’s balance point (the needle on the Soul Compass), set by the name alone.
+             <b>Shared</b> lists talents that rank in both top-threes.</p>
+          <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+            <input class="name-in" v-model="friends" @keyup.enter="runCompat" placeholder="ENTER NAMES OF FRIENDS (0 to 5), comma-separated">
+            <button class="btn" @click="runCompat">Compare</button>
+          </div>
+          <div class="grid">
+            <div class="scrollx" v-html="charts.compatList"></div>
+            <div v-html="charts.compatRadar"></div>
+          </div>
+        </div>
+        <div v-show="tab==='life'">
+          <div class="tabs" style="margin-bottom:8px">
+            <div class="tab" :class="{on:lifeStyle==='cable'}" @click="lifeStyle='cable';drawLife()">Life Cable (3-D)</div>
+            <div class="tab" :class="{on:lifeStyle==='stream'}" @click="lifeStyle='stream';drawLife()">Life Stream</div>
+            <span style="flex:1"></span>
+            <div class="tab" :class="{on:lifeAxis==='age'}" @click="lifeAxis='age';drawLife()">Age</div>
+            <div class="tab" :class="{on:lifeAxis==='year'}" @click="lifeAxis='year';drawLife()">Calendar</div>
+          </div>
+          <p class="hint">Each of the 10 talents is a strand. <b>Only the thickness of a strand carries meaning:</b>
+             it is that talent’s strength at that point in life. In the <b>Life Cable</b> the up-and-down weave is
+             decorative (it just braids the strands into a 3-D rope); a strand’s vertical position means nothing.
+             <b>Life Stream</b> shows the same strands flat and stacked, as the additive “shape of your life”
+             (total height = all talents combined). Both are birth-date driven, like the pillars.</p>
+          <div style="max-width:700px;margin:auto" v-html="charts.life"></div>
+        </div>
+        <div v-show="tab==='traits'">
+          <p class="hint">Each colour band’s LOVES (receptive traits) and POWERS (active traits).
+             Circle size scales with the band’s score.</p>
+          <div v-html="charts.traits"></div>
+        </div>
+        <div v-show="tab==='evo'">
+          <div class="tabs" style="margin-bottom:8px">
+            <div class="tab" :class="{on:pillar==='age'}" @click="pillar='age';drawPillar()">By Age (0 to 90)</div>
+            <div class="tab" :class="{on:pillar==='year'}" @click="pillar='year';drawPillar()">By Calendar (Jan to Dec)</div>
+          </div>
+          <p class="hint">Wider paths mark times of greater opportunity. The grey shade shows karmic help,
+             with lighter meaning more. Coloured caps show the birth profile, and columns run left to right as digits 9 to 0.
+             <b>This is the only chart driven by the birth date.</b> The
+             {{ pillar==='age' ? 'age axis sweeps the year-ring from your birth angle' : 'calendar magnitudes are normalised at your birth day' }}.</p>
+          <div style="max-width:660px;margin:auto" v-html="charts.pillar"></div>
+        </div>
+        <div v-show="tab==='tri'">
+          <p class="hint">Rows L1 to L12 are the level 1 through level 12 reductions of the name number (78 digits).
+             “Level” is used instead of “base” to avoid confusion with a mathematical base (base-2, base-10).</p>
+          <div class="scrollx" v-html="charts.tri"></div>
+        </div>
+        <div v-show="tab==='raw'">
+          <p class="hint">Name number (base-12 reductions feed the pyramid).</p>
+          <div class="mono" style="margin-bottom:10px"><b>Name number:</b> {{ r.nameNum }}</div>
+          <div class="mono" style="margin-bottom:10px"><b>Digit counts (0-9):</b> {{ r.values.join('  ') }}</div>
+          <div class="mono" style="margin-bottom:10px"><b>Scores ×1000/365:</b> {{ r.scores.join('  ') }}</div>
+          <div class="mono"><b>365-digit pyramid string:</b><br>{{ r.numString }}</div>
+        </div>
+      </div>
+
+      <div class="gaps">
+        <h3>✦ How to read your chart</h3>
+        <ul>
+          <li><b>Your soul angle comes from your name.</b> The white sun is the balance point of all your talents, and its angle is set by your name alone. Your birth date does not move it; it only shapes the <i>Future Development</i> and <i>Life Path</i> charts over time.</li>
+          <li><b>The inner zone hides quiet talents.</b> On the Soul Star, any talent scoring under 100 sits inside the dark inner zone. These are inner or still-forming talents, not weaknesses. Talents above 100 push out into the bright ring.</li>
+          <li><b>Scales run 0 to 1000.</b> Every talent is scored as a share of your 365-day pattern, scaled to a 1000 base, so the numbers read like clear proportions.</li>
+          <li><b>Music &amp; chakras.</b> The Music &amp; Stars wheel maps the seven musical keys to the colour ring as a creative overlay; the chakra names follow the traditional colour correspondence.</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <footer class="sitefoot">
+      <span class="brand"><svg width="16" height="16" viewBox="0 0 24 24"><g stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="4.9" y1="4.9" x2="19.1" y2="19.1"/><line x1="19.1" y1="4.9" x2="4.9" y2="19.1"/></g><circle cx="12" cy="12" r="2.4" fill="currentColor"/></svg> nameman</span>
+      <span class="dot">·</span> Where Names Come To Life
+      <span class="dot">·</span> Soular-System™ is a registered trademark
+      <span class="dot">·</span> <a href="https://nameman.org">nameman.org</a>
+      <span class="dot">·</span> © NAMEMAN
+    </footer>
+
+    <div id="report" v-html="charts.report"></div>
+  </div>
+</div>
+
+<script src="vendor/jspdf.umd.min.js"></script>
+<script src="engine.js"></script>
+<script src="charts.js"></script>
+<script>
+const { createApp, reactive, ref, computed, watch } = Vue;
+createApp({
+  setup(){
+    const name = ref('Ada Lovelace');
+    const month = ref(3), day = ref(10);
+    const months = NumEngine.MONTH_NAMES.map(m=>m.charAt(0)+m.slice(1).toLowerCase());
+    const r = ref(null);
+    const tab = ref('reading');
+    const band = ref('element');
+    const pillar = ref('year');
+    const lifeAxis = ref('age');
+    const lifeStyle = ref('cable');
+    const theme = ref('light');
+    function scrollToAnalyzer(){ var el=document.getElementById('analyzer'); if(el) el.scrollIntoView({behavior:'smooth'}); }
+    const friends = ref('ALPHA OMEGA, BETA GAMMA, DELTA SIGMA');
+    const charts = reactive({star:'',rank:'',band:'',scale:'',pillar:'',tri:'',traits:'',life:'',
+                             mandala:'',compass:'',pyramid:'',compatList:'',compatRadar:'',reading:'',music:'',
+                             delta:'',age:'',report:''});
+    const opt = ()=>({theme:theme.value});
+    const palette = ['#66b2ff','#ff6b6b','#7CFFB2','#ffd166','#b266ff'];
+
+    // ---- Letter Influence ----
+    const influence = ref(null);
+    const selLetter = ref(0);
+    const maxMag = computed(()=> influence.value ? Math.max(1,...influence.value.letters.map(L=>L.magnitude)) : 1);
+    const topLetters = computed(()=> influence.value
+      ? influence.value.letters.slice().sort((a,b)=>b.magnitude-a.magnitude).slice(0,6) : []);
+    function heat(mag){
+      const t = Math.min(1, mag/maxMag.value);            // 0..1
+      const c = theme.value==='dark'
+        ? [ [26,28,44], [178,102,255] ]                   // panel2 -> accent
+        : [ [240,240,248], [139,61,255] ];
+      const mix = c[0].map((a,i)=> Math.round(a+(c[1][i]-a)*t));
+      return 'rgb('+mix.join(',')+')';
+    }
+    function drawDelta(){ if(influence.value && influence.value.letters.length) charts.delta = NumCharts.deltaBars(influence.value.letters[selLetter.value].deltas, opt()); }
+    function selectLetter(i){ selLetter.value=i; drawDelta(); }
+
+    // ---- Age Explorer ----
+    const ageRows = ref(null);
+    const ageMax = ref(1);
+    const age = ref(30);
+    const topAtAge = computed(()=>{
+      if(!ageRows.value) return {digit:0,color:'#fff'};
+      const ts = ageRows.value[Math.min(age.value, ageRows.value.length-1)].ts;
+      const d = ts.indexOf(Math.max(...ts));
+      return {digit:d, color: NumEngine.DIGIT_COLORS[d]};
+    });
+    function drawAge(){ if(ageRows.value) charts.age = NumCharts.ageProfile(ageRows.value[Math.min(age.value, ageRows.value.length-1)].ts, ageMax.value, opt()); }
+    function onAge(){ drawAge(); }
+
+    // ---- Hear Your Name ----
+    const BAND_NOTE = ['B','C','D','G','E','F'];
+    const NOTE_FREQ = {C:261.63,D:293.66,E:329.63,F:349.23,G:392.00,A:440.00,B:493.88};
+    const playing = ref(false), playIndex = ref(-1);
+    const noteSeq = computed(()=>{
+      const out=[]; const s=(name.value||'').toUpperCase();
+      for(let i=0;i<s.length;i++){
+        const v=s.charCodeAt(i)-64; if(v<1||v>26) continue;
+        const dr=((v-1)%9)+1, b=NumEngine.DIGIT_BAND[dr], note=BAND_NOTE[b];
+        out.push({char:s[i], note, freq:NOTE_FREQ[note], color:NumEngine.DIGIT_COLORS[dr]});
+      }
+      return out;
+    });
+    let actx=null, atimer=null;
+    function stopName(){ playing.value=false; playIndex.value=-1; if(atimer){clearTimeout(atimer);atimer=null;} }
+    function playName(){
+      stopName(); const seq=noteSeq.value; if(!seq.length) return;
+      try{ actx = actx || new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return; }
+      if(actx.resume) actx.resume();
+      playing.value=true; let i=0; const dur=300;
+      (function step(){
+        if(!playing.value || i>=seq.length){ stopName(); return; }
+        playIndex.value=i;
+        const o=actx.createOscillator(), g=actx.createGain(), t0=actx.currentTime;
+        o.type='triangle'; o.frequency.value=seq[i].freq;
+        g.gain.setValueAtTime(0.0001,t0);
+        g.gain.exponentialRampToValueAtTime(0.28,t0+0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001,t0+dur/1000);
+        o.connect(g).connect(actx.destination); o.start(t0); o.stop(t0+dur/1000+0.03);
+        i++; atimer=setTimeout(step, dur);
+      })();
+    }
+    function drawBand(){ if(r.value) charts.band = NumCharts.bandChart(r.value, band.value, opt()); }
+    function drawPillar(){ if(r.value) charts.pillar = NumCharts.pillarChart(r.value, pillar.value, opt()); }
+    function drawLife(){ if(r.value) charts.life = lifeStyle.value==='cable'
+        ? NumCharts.lifeCable(r.value, lifeAxis.value, opt())
+        : NumCharts.lifeStream(r.value, lifeAxis.value, opt()); }
+    function redraw(){
+      const res = r.value; if(!res) return;
+      charts.star = NumCharts.starChart(res, opt());
+      charts.rank = NumCharts.rankChart(res, opt());
+      charts.scale = NumCharts.scaleChart(res, opt());
+      charts.tri  = NumCharts.triangleHtml(res);
+      charts.traits = NumCharts.traitTable(res);
+      charts.mandala = NumCharts.yearMandala(res, opt());
+      charts.compass = NumCharts.soulCompass(res, opt());
+      charts.pyramid = NumCharts.pyramidExplainer(res);
+      charts.reading = NumCharts.readingHtml(res);
+      charts.music = NumCharts.musicChart(res, opt());
+      drawBand(); drawPillar(); drawLife(); runCompat();
+      drawDelta(); drawAge();
+    }
+    function runCompat(){
+      const res = r.value; if(!res) return;
+      const list = friends.value.split(',').map(s=>s.trim()).filter(Boolean).slice(0,5);
+      const rows = list.map((nm,i)=>{
+        const ra = NumEngine.analyze(nm, {month:res.monthNum, day:res.dayNum});
+        const c = NumEngine.compare(res, ra);
+        return {name:nm, scores:ra.scores, ...c, stroke:palette[(i+1)%palette.length]};
+      }).sort((a,b)=>b.closeness-a.closeness);
+      // ranked list
+      let html = '<table class="traits"><thead><tr><th>Name</th><th>Closeness</th><th>Soul Δ</th><th>Shared</th></tr></thead><tbody>';
+      rows.forEach(x=>{
+        html += '<tr><td class="tdim">'+x.name+'</td><td><div style="display:flex;align-items:center;gap:6px">'+
+          '<div style="height:9px;width:'+x.closeness+'px;max-width:120px;border-radius:4px;background:'+x.stroke+'"></div>'+x.closeness+'%</div></td>'+
+          '<td>'+x.angleDelta+'°</td><td>'+(x.shared.length?x.shared.join(', '):'none')+'</td></tr>';
+      });
+      html += '</tbody></table>';
+      charts.compatList = html;
+      // overlaid radar: primary + each friend
+      const series = [{label:res.name, scores:res.scores, stroke:palette[0]}].concat(
+        rows.map(x=>({label:x.name, scores:x.scores, stroke:x.stroke})));
+      charts.compatRadar = NumCharts.radarChart(series, opt());
+    }
+    // ---- Printable PDF report (all charts as crisp SVG + data tables) ----
+    function buildReport(res){
+      const lt={theme:'light'}, E=NumEngine, C=NumCharts;
+      const dataRows = res.values.map((v,d)=>
+        `<tr><td style="color:${E.DIGIT_COLORS[d]};font-weight:700">${d}</td><td>${v}</td><td>${res.scores[d]}</td><td>${E.DIGIT_DIMENSION[d]}</td><td>${E.DIGIT_ELEMENT[d]}</td></tr>`).join('');
+      const reading = E.reading(res).map(p=>`<div class="rp"><h3>${p.title}</h3><div>${p.text}</div></div>`).join('');
+      let when=''; try{ when=' · generated '+new Date().toLocaleDateString(); }catch(e){}
+      return `
+        <div class="rtitle">NAMEMAN Numerology Report</div>
+        <div class="rsub">${res.name.toUpperCase()} · born ${res.monthName} ${res.dayNum} · soul angle ${res.soulAngle}° (${res.quadrant.name})${when}</div>
+        <div class="rsec rrow">
+          <div><h2>Soul Star</h2><div class="rstar">${C.starChart(res,lt)}</div></div>
+          <div><h2>Soul Compass</h2><div class="rcompass">${C.soulCompass(res,lt)}</div></div>
+        </div>
+        <div class="rsec"><h2>Talents: Dominant to Subordinant</h2>${C.rankChart(res,lt)}</div>
+        <div class="rsec rrow">
+          <div><h2>Elements</h2>${C.bandChart(res,'element',lt)}</div>
+          <div><h2>Dimensions</h2>${C.bandChart(res,'dimension',lt)}</div>
+        </div>
+        <div class="rsec"><h2>Scales (0 to 1000)</h2><div class="rwide">${C.scaleChart(res,lt)}</div></div>
+        <div class="rsec"><h2>Written Reading</h2><div class="rread">${reading}</div></div>
+        <div class="rsec"><h2>Loves &amp; Powers</h2>${C.traitTable(res)}</div>
+        <div class="rsec"><h2>Year Mandala</h2><div class="rstar">${C.yearMandala(res,lt)}</div></div>
+        <div class="rsec"><h2>Future Development (calendar)</h2><div class="rwide">${C.pillarChart(res,'year',lt)}</div></div>
+        <div class="rsec"><h2>Life Path</h2><div class="rwide">${C.lifeStream(res,'year',lt)}</div></div>
+        <div class="rsec"><h2>How the numbers are built</h2>${C.pyramidExplainer(res)}</div>
+        <div class="rsec"><h2>All data</h2>
+          <table><thead><tr><th>Digit</th><th>Count</th><th>Score</th><th>Dimension</th><th>Element</th></tr></thead><tbody>${dataRows}</tbody></table>
+          <p class="rmono" style="margin-top:8px"><b>Name number:</b> ${res.nameNum}</p>
+          <p class="rmono"><b>365-digit pyramid:</b> ${res.numString}</p>
+        </div>
+        <div class="rcredit">NAMEMAN · Where Names Come To Life · Soular-System™ is a registered trademark · © NAMEMAN</div>`;
+    }
+    // Rasterise one chart SVG to a JPEG data URL via the native canvas API
+    // (reliable, no DOM cloning / no html2canvas). Returns {data, aspect}.
+    function svgToImage(svg){
+      return new Promise(function(resolve, reject){
+        var vb = /viewBox="0 0 ([\d.]+) ([\d.]+)"/.exec(svg) || [null, 300, 200];
+        var vw = +vb[1], vh = +vb[2];
+        var sized = svg.replace('<svg ', '<svg width="' + vw + '" height="' + vh + '" ');
+        var url = URL.createObjectURL(new Blob([sized], {type:'image/svg+xml;charset=utf-8'}));
+        var img = new Image();
+        var timer = setTimeout(function(){ cleanup(); reject(new Error('svg load timeout')); }, 8000);
+        function cleanup(){ clearTimeout(timer); URL.revokeObjectURL(url); }
+        img.onload = function(){
+          try{
+            var scale = 2, c = document.createElement('canvas');
+            c.width = Math.max(1, Math.round(vw*scale)); c.height = Math.max(1, Math.round(vh*scale));
+            var ctx = c.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,c.width,c.height);
+            ctx.drawImage(img, 0, 0, c.width, c.height);
+            cleanup();
+            resolve({ data: c.toDataURL('image/jpeg', 0.92), aspect: vh/vw });
+          }catch(err){ cleanup(); reject(err); }
+        };
+        img.onerror = function(){ cleanup(); reject(new Error('svg image error')); };
+        img.src = url;
+      });
+    }
+
+    const pdfBusy = ref(false);
+    async function downloadPDF(){
+      if(!r.value || pdfBusy.value) return;
+      if(!window.jspdf){                                   // library missing -> print fallback
+        const prev=document.title; document.title='NAMEMAN - '+r.value.name;
+        window.print(); setTimeout(()=>{document.title=prev;},800); return;
+      }
+      pdfBusy.value = true;
+      try{
+        const res = r.value, lt = {theme:'light'}, C = NumCharts, E = NumEngine;
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p','mm','a4');
+        const pageW = 210, pageH = 297, mx = 12, contentW = pageW - mx*2;
+        const ink=[20,20,24], purple=[106,61,240], muted=[110,110,124];
+        const soft=[244,244,251], line=[226,226,234];
+        let y = 0;
+        function ensure(h){ if(y + h > pageH - 14){ pdf.addPage(); y = 16; } }
+        function heading(t){
+          ensure(13); y += 2;
+          pdf.setFillColor(purple[0],purple[1],purple[2]); pdf.rect(mx, y-3.5, 2.4, 3.6, 'F');
+          pdf.setFont('helvetica','bold'); pdf.setFontSize(11.5); pdf.setTextColor(purple[0],purple[1],purple[2]);
+          pdf.text(t, mx+4.6, y);
+          pdf.setDrawColor(line[0],line[1],line[2]); pdf.line(mx, y+2.2, pageW-mx, y+2.2);
+          y += 7; pdf.setTextColor(ink[0],ink[1],ink[2]);
+        }
+        function desc(t){
+          pdf.setFont('helvetica','italic'); pdf.setFontSize(8.6); pdf.setTextColor(112,112,126);
+          const lines = pdf.splitTextToSize(t, contentW);
+          for(let i=0;i<lines.length;i++){ ensure(4.4); pdf.text(lines[i], mx, y); y += 4.1; }
+          y += 2; pdf.setTextColor(ink[0],ink[1],ink[2]);
+        }
+        function keep(h){ if(y > 16 && y + h > pageH - 14){ pdf.addPage(); y = 16; } }
+        // a chart section that keeps its heading + description + chart together,
+        // page-breaking before the heading if the whole unit will not fit.
+        async function block(title, dtext, svg, maxW, maxH){
+          const im = await svgToImage(svg);
+          let w = Math.min(maxW || contentW, contentW), ih = w * im.aspect;
+          const cap = maxH || 100;                                 // cap height so two sections pair per page
+          if(ih > cap){ const s2 = cap/ih; ih *= s2; w *= s2; }
+          pdf.setFont('helvetica','italic'); pdf.setFontSize(8.6);
+          const dl = pdf.splitTextToSize(dtext, contentW);
+          const headH = 9, descH = dl.length*4.1 + 2;
+          const avail = (pageH - 14) - 16 - headH - descH;         // hard limit: chart space on a fresh page
+          if(ih > avail){ const sc = avail/ih; ih *= sc; w *= sc; }
+          if(y > 16 && y + headH + descH + ih + 8 > pageH - 14){ pdf.addPage(); y = 16; }
+          heading(title); desc(dtext);
+          pdf.addImage(im.data, 'JPEG', mx + (contentW - w)/2, y, w, ih);
+          y += ih + 8;
+        }
+        function para(text, size){
+          pdf.setFont('helvetica','normal'); pdf.setFontSize(size||10); pdf.setTextColor(ink[0],ink[1],ink[2]);
+          const lines = pdf.splitTextToSize(text, contentW);
+          for(let i=0;i<lines.length;i++){ ensure(5); pdf.text(lines[i], mx, y); y += 4.8; }
+        }
+        function statBox(x, w, label, value){
+          pdf.setFillColor(soft[0],soft[1],soft[2]); pdf.roundedRect(x, y, w, 15, 1.6,1.6,'F');
+          pdf.setFont('helvetica','normal'); pdf.setFontSize(7); pdf.setTextColor(122,122,138);
+          pdf.text(label.toUpperCase(), x+3.2, y+5);
+          pdf.setFont('helvetica','bold'); pdf.setFontSize(12); pdf.setTextColor(ink[0],ink[1],ink[2]);
+          pdf.text(String(value), x+3.2, y+11.5);
+        }
+        // section descriptions (ported from the app UI)
+        const D = {
+          star:'Twelve sectors of 30 degrees. Each circle\'s radius is its talent score; the white sun is the area-weighted balance point (centroid), and the dark inner zone hides any talent scoring under 100.',
+          compass:'Your soul angle shown as a magnetic-direction dial: the centroid of the talent star projected onto four quadrants. It is set by your name alone.',
+          talents:'How often each digit appears in your 365-digit pyramid, scaled to a 1000 base and ranked from your most dominant talent down to the most subordinant.',
+          elements:'The six colour bands of the numerology circle. Each band sums its two sectors; 0 and 5 are twin sectors, so Void and Earth count their digit twice.',
+          dimensions:'The same six colour bands, named as the dimensions of character, from Spiritual through to Physical.',
+          scales:'Every digit on a 0 to 1000 gauge. The line at 100 marks the threshold below which a talent is considered hidden or still-forming.',
+          mandala:'Your 365-day fingerprint laid around the year, each day coloured by its digit. Clusters of a colour are your strong talents; the star marks your birthday.',
+          future:'Each digit\'s strength across the calendar year. Wider paths are times of greater opportunity; lighter shading means more karmic help.',
+          life:'The ten talents drawn as strands. Only the thickness of a strand carries meaning: that talent\'s strength over life. The total height is the additive shape of your life.',
+          music:'The 12 sectors carry your digits (0 and 5 are twin sectors). The 12 chromatic notes sit at the sector edges, B at the top and F at the bottom, as white and black keys; B and F are dual-nature.',
+          reading:'A plain-language interpretation of your chart, in the system\'s own vocabulary.',
+          loves:'Each colour band has a receptive side (Loves) and an active side (Powers).',
+          triangle:'The name number reduced at each level L1 to L12 (78 digits in all), the source from which the pyramid is built.',
+          data:'The underlying digit counts and scores, plus the full 365-digit pyramid string.'
+        };
+        const monthCap = res.monthName.charAt(0) + res.monthName.slice(1).toLowerCase();
+        let genDate = ''; try{ genDate = new Date().toLocaleDateString(); }catch(e){}
+        // ---- PAGE 1: dark cosmic cover (constellation) ----
+        pdf.setFillColor(10,9,19); pdf.rect(0,0,pageW,pageH,'F');
+        pdf.setFillColor(206,202,232);
+        [[18,30,.5],[42,19,.4],[72,42,.5],[122,24,.4],[162,34,.5],[186,21,.4],[30,72,.4],[178,66,.5],
+         [150,250,.4],[56,268,.5],[112,284,.4],[24,246,.4],[190,236,.5],[92,256,.4],[200,120,.4],
+         [13,150,.4],[198,176,.5],[16,210,.4],[100,16,.4],[140,210,.4]].forEach(function(p){ pdf.circle(p[0],p[1],p[2],'F'); });
+        // wordmark + star glyph
+        pdf.setDrawColor(154,139,255); pdf.setLineWidth(0.5);
+        pdf.line(mx+2,18,mx+2,26); pdf.line(mx-2,22,mx+6,22); pdf.line(mx-1,19,mx+5,25); pdf.line(mx-1,25,mx+5,19);
+        pdf.setFont('helvetica','bold'); pdf.setFontSize(13); pdf.setTextColor(255,255,255); pdf.text('nameman', mx+10, 24);
+        pdf.setFont('courier','normal'); pdf.setFontSize(8); pdf.setTextColor(142,138,174);
+        pdf.text('SOULAR-SYSTEM™ REPORT', pageW-mx, 24, {align:'right'});
+        // dark soul star, centered
+        var coverStar = await svgToImage(C.starChart(res, {theme:'dark'}));
+        var cw = 112, ch = cw*coverStar.aspect;
+        pdf.addImage(coverStar.data, 'JPEG', (pageW-cw)/2, 64, cw, ch);
+        var ty = 64 + ch + 24;
+        pdf.setFont('courier','normal'); pdf.setFontSize(9); pdf.setTextColor(185,180,230); pdf.text('T H E   M A P   O F', pageW/2, ty, {align:'center'});
+        pdf.setFont('helvetica','bold'); pdf.setFontSize(33); pdf.setTextColor(255,255,255); pdf.text(res.name, pageW/2, ty+13, {align:'center'});
+        pdf.setFont('courier','normal'); pdf.setFontSize(10); pdf.setTextColor(150,146,182); pdf.text('born ' + monthCap + ' ' + res.dayNum, pageW/2, ty+21, {align:'center'});
+        pdf.setFontSize(8); pdf.setTextColor(120,116,150);
+        pdf.text('nameman.org', mx, pageH-14); pdf.text(genDate ? 'Generated ' + genDate : 'Soular-System™', pageW-mx, pageH-14, {align:'right'});
+        // ---- PAGE 2: summary + analytical Soul Star ----
+        pdf.addPage(); y = 16;
+        const gp = 4, bw = (contentW - gp*3)/4;
+        statBox(mx,            bw, 'Soul angle', res.soulAngle + '°');
+        statBox(mx+(bw+gp),    bw, 'Quadrant',   res.quadrant.name);
+        statBox(mx+(bw+gp)*2,  bw, 'Strongest',  res.ranked[0].digit + ' / ' + res.ranked[0].score);
+        statBox(mx+(bw+gp)*3,  bw, 'Weakest',    res.ranked[9].digit + ' / ' + res.ranked[9].score);
+        y += 15 + 5;
+        await block('Soul Star', D.star, C.starChart(res,lt), 150, 120);
+        // ---- remaining chart sections (heading + description kept with chart) ----
+        await block('Soul Compass', D.compass, C.soulCompass(res,lt), 96);
+        await block('Talents: Dominant to Subordinant', D.talents, C.rankChart(res,lt), contentW);
+        await block('Elements', D.elements, C.bandChart(res,'element',lt), 150);
+        await block('Dimensions', D.dimensions, C.bandChart(res,'dimension',lt), 150);
+        await block('Scales (0 to 1000)', D.scales, C.scaleChart(res,lt), 150);
+        await block('Year Mandala', D.mandala, C.yearMandala(res,lt), 120);
+        await block('Future Development', D.future, C.pillarChart(res,'year',lt), contentW);
+        await block('Life Path', D.life, C.lifeStream(res,'year',lt), contentW);
+        await block('Music & the Numerology Circle', D.music, C.musicChart(res,lt), 120);
+        // ---- written reading ----
+        keep(46); heading('Written Reading'); desc(D.reading);
+        E.reading(res).forEach(function(p){
+          keep(22); pdf.setFont('helvetica','bold'); pdf.setFontSize(10.5); pdf.setTextColor(purple[0],purple[1],purple[2]);
+          pdf.text(p.title, mx, y); y += 5; pdf.setTextColor(ink[0],ink[1],ink[2]);
+          para(p.text, 10); y += 2.5;
+        });
+        // ---- loves & powers ----
+        keep(46); heading('Loves & Powers'); desc(D.loves);
+        res.bands.forEach(function(b){
+          keep(14); pdf.setFont('helvetica','bold'); pdf.setFontSize(10); pdf.setTextColor(ink[0],ink[1],ink[2]);
+          pdf.text(b.dimension + '  /  ' + b.element + '   (' + b.score + ')', mx, y); y += 4.7;
+          para('Loves: ' + b.loves.join(', ') + '      Powers: ' + b.powers.join(', '), 9.5); y += 2;
+        });
+        // ---- numerology triangle ----
+        keep(46); heading('Numerology Triangle (Levels L1 to L12)'); desc(D.triangle);
+        pdf.setFont('courier','normal'); pdf.setFontSize(9); pdf.setTextColor(ink[0],ink[1],ink[2]);
+        for(let z=1; z<=12; z++){ ensure(4.4); pdf.text('L' + (z<10?' ':'') + z + ':  ' + res.firstLevels[z], mx, y); y += 4.3; }
+        y += 3;
+        // ---- all data ----
+        keep(46); heading('All Data'); desc(D.data);
+        pdf.setFont('courier','normal'); pdf.setFontSize(9);
+        ensure(4.6); pdf.setTextColor(122,122,138); pdf.text('digit  count  score  dimension     element', mx, y); y += 4.4;
+        pdf.setTextColor(ink[0],ink[1],ink[2]);
+        for(let d=0; d<10; d++){
+          ensure(4.4);
+          pdf.text(pad(d,7) + pad(res.values[d],7) + pad(res.scores[d],7) + pad(E.DIGIT_DIMENSION[d],14) + E.DIGIT_ELEMENT[d], mx, y);
+          y += 4.3;
+        }
+        y += 3; para('Name number: ' + res.nameNum, 8); para('365-digit pyramid: ' + res.numString, 7);
+        // ---- page-number footers ----
+        const total = pdf.internal.getNumberOfPages();
+        for(let p=1; p<=total; p++){
+          pdf.setPage(p);
+          pdf.setDrawColor(line[0],line[1],line[2]); pdf.line(mx, pageH-10, pageW-mx, pageH-10);
+          pdf.setFont('helvetica','normal'); pdf.setFontSize(8); pdf.setTextColor(150,150,162);
+          pdf.text('NAMEMAN  ·  ' + res.name.toUpperCase(), mx, pageH-6);
+          pdf.text('Page ' + p + ' of ' + total, pageW-mx, pageH-6, {align:'right'});
+        }
+        pdf.save('NAMEMAN - ' + res.name + '.pdf');
+      }catch(e){
+        console.error('PDF generation failed', e);
+        alert('Sorry, the PDF could not be generated: ' + e.message);
+      }finally{
+        pdfBusy.value = false;
+      }
+    }
+    function pad(v, n){ var s = String(v); while(s.length < n) s += ' '; return s; }
+
+    function run(){
+      if(!name.value.trim()) return;
+      stopName();
+      r.value = NumEngine.analyze(name.value, {month:month.value, day:day.value});
+      influence.value = NumEngine.letterInfluence(name.value);
+      selLetter.value = 0;
+      const ev = NumEngine.evolution(r.value, 'age');     // 91 rows, J = 0..90
+      ageRows.value = ev.rows;
+      ageMax.value = ev.maxTs || 1;
+      redraw();
+      charts.report = buildReport(r.value);
+    }
+    function toggleTheme(){ theme.value = theme.value==='dark' ? 'light' : 'dark'; }
+    watch(theme, v=>{ document.body.classList.toggle('light', v==='light'); redraw(); }, {immediate:true});
+    run();
+    return { name, month, day, months, r, tab, band, pillar, lifeAxis, lifeStyle, theme, friends, charts,
+             influence, selLetter, maxMag, topLetters, heat, selectLetter,
+             ageRows, age, topAtAge, onAge,
+             noteSeq, playing, playIndex, playName, stopName, downloadPDF, pdfBusy,
+             run, drawBand, drawPillar, drawLife, runCompat, toggleTheme, draw:drawBand, scrollToAnalyzer };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
