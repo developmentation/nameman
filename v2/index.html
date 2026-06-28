@@ -684,7 +684,7 @@ createApp({
     }
     // Rasterise one chart SVG to a JPEG data URL via the native canvas API
     // (reliable, no DOM cloning / no html2canvas). Returns {data, aspect}.
-    function svgToImage(svg){
+    function svgToImage(svg, bg){
       return new Promise(function(resolve, reject){
         var vb = /viewBox="0 0 ([\d.]+) ([\d.]+)"/.exec(svg) || [null, 300, 200];
         var vw = +vb[1], vh = +vb[2];
@@ -698,7 +698,7 @@ createApp({
             var scale = 2, c = document.createElement('canvas');
             c.width = Math.max(1, Math.round(vw*scale)); c.height = Math.max(1, Math.round(vh*scale));
             var ctx = c.getContext('2d');
-            ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,c.width,c.height);
+            ctx.fillStyle = bg || '#ffffff'; ctx.fillRect(0,0,c.width,c.height);
             ctx.drawImage(img, 0, 0, c.width, c.height);
             cleanup();
             resolve({ data: c.toDataURL('image/jpeg', 0.92), aspect: vh/vw });
@@ -801,8 +801,8 @@ createApp({
         pdf.setFont('helvetica','bold'); pdf.setFontSize(13); pdf.setTextColor(255,255,255); pdf.text('nameman', mx+10, 24);
         pdf.setFont('courier','normal'); pdf.setFontSize(8); pdf.setTextColor(142,138,174);
         pdf.text('SOULAR-SYSTEM™ REPORT', pageW-mx, 24, {align:'right'});
-        // dark soul star, centered
-        var coverStar = await svgToImage(C.starChart(res, {theme:'dark'}));
+        // dark soul star, centered (dark canvas bg so it blends with the cover)
+        var coverStar = await svgToImage(C.starChart(res, {theme:'dark'}), '#0A0913');
         var cw = 112, ch = cw*coverStar.aspect;
         pdf.addImage(coverStar.data, 'JPEG', (pageW-cw)/2, 64, cw, ch);
         var ty = 64 + ch + 24;
@@ -819,7 +819,21 @@ createApp({
         statBox(mx+(bw+gp)*2,  bw, 'Strongest',  res.ranked[0].digit + ' / ' + res.ranked[0].score);
         statBox(mx+(bw+gp)*3,  bw, 'Weakest',    res.ranked[9].digit + ' / ' + res.ranked[9].score);
         y += 15 + 5;
-        await block('Soul Star', D.star, C.starChart(res,lt), 150, 120);
+        // Soul Star on a dark feature panel (the wheel is designed for dark)
+        {
+          const panelRGB = [14,12,26];                       // #0E0C1A
+          const sIm = await svgToImage(C.starChart(res, {theme:'dark'}), '#0E0C1A');
+          const iw = 96, ih = iw * sIm.aspect, padV = 11, cardH = ih + padV*2;
+          pdf.setFont('helvetica','italic'); pdf.setFontSize(8.6);
+          const dH = pdf.splitTextToSize(D.star, contentW).length*4.1 + 2;
+          if(y > 16 && y + 9 + dH + cardH + 8 > pageH - 14){ pdf.addPage(); y = 16; }
+          heading('Soul Star'); desc(D.star);
+          pdf.setFillColor(panelRGB[0],panelRGB[1],panelRGB[2]); pdf.roundedRect(mx, y, contentW, cardH, 5,5,'F');
+          pdf.setFillColor(74,70,108);
+          [[mx+14,y+12,.5],[mx+contentW-18,y+15,.5],[mx+42,y+cardH-13,.4],[mx+contentW-46,y+cardH-15,.4],[mx+contentW/2,y+9,.4]].forEach(function(p){ pdf.circle(p[0],p[1],p[2],'F'); });
+          pdf.addImage(sIm.data, 'JPEG', mx + (contentW-iw)/2, y + padV, iw, ih);
+          y += cardH + 8;
+        }
         // ---- remaining chart sections (heading + description kept with chart) ----
         await block('Soul Compass', D.compass, C.soulCompass(res,lt), 96);
         await block('Talents: Dominant to Subordinant', D.talents, C.rankChart(res,lt), contentW);
