@@ -443,7 +443,6 @@
 </div>
 
 <script src="vendor/jspdf.umd.min.js"></script>
-<script src="vendor/html2canvas.min.js"></script>
 <script src="engine.js"></script>
 <script src="charts.js"></script>
 <script>
@@ -604,55 +603,124 @@ createApp({
         </div>
         <div class="rcredit">NAMEMAN · Where Names Come To Life · Soular-System™ is a registered trademark · © NAMEMAN</div>`;
     }
+    // Rasterise one chart SVG to a JPEG data URL via the native canvas API
+    // (reliable, no DOM cloning / no html2canvas). Returns {data, aspect}.
+    function svgToImage(svg){
+      return new Promise(function(resolve, reject){
+        var vb = /viewBox="0 0 ([\d.]+) ([\d.]+)"/.exec(svg) || [null, 300, 200];
+        var vw = +vb[1], vh = +vb[2];
+        var sized = svg.replace('<svg ', '<svg width="' + vw + '" height="' + vh + '" ');
+        var url = URL.createObjectURL(new Blob([sized], {type:'image/svg+xml;charset=utf-8'}));
+        var img = new Image();
+        var timer = setTimeout(function(){ cleanup(); reject(new Error('svg load timeout')); }, 8000);
+        function cleanup(){ clearTimeout(timer); URL.revokeObjectURL(url); }
+        img.onload = function(){
+          try{
+            var scale = 2, c = document.createElement('canvas');
+            c.width = Math.max(1, Math.round(vw*scale)); c.height = Math.max(1, Math.round(vh*scale));
+            var ctx = c.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,c.width,c.height);
+            ctx.drawImage(img, 0, 0, c.width, c.height);
+            cleanup();
+            resolve({ data: c.toDataURL('image/jpeg', 0.92), aspect: vh/vw });
+          }catch(err){ cleanup(); reject(err); }
+        };
+        img.onerror = function(){ cleanup(); reject(new Error('svg image error')); };
+        img.src = url;
+      });
+    }
+
     const pdfBusy = ref(false);
     async function downloadPDF(){
       if(!r.value || pdfBusy.value) return;
-      // fallback to the print dialog if the libraries did not load
-      if(!window.html2canvas || !window.jspdf){
+      if(!window.jspdf){                                   // library missing -> print fallback
         const prev=document.title; document.title='NAMEMAN - '+r.value.name;
         window.print(); setTimeout(()=>{document.title=prev;},800); return;
       }
       pdfBusy.value = true;
-      // Render the report inside an isolated iframe so html2canvas only has to
-      // clone a tiny document (cloning the full app DOM per-block would hang).
-      let frame;
       try{
-        const css = (document.querySelector('style') || {}).textContent || '';
-        frame = document.createElement('iframe');
-        frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:840px;height:1200px;border:0;background:#fff';
-        document.body.appendChild(frame);
-        const idoc = frame.contentDocument || frame.contentWindow.document;
-        idoc.open();
-        idoc.write('<!DOCTYPE html><html><head><meta charset="utf-8"><style>' + css +
-          'body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:#fff}' +
-          '#report{display:block!important;width:780px;padding:24px;box-sizing:border-box;background:#fff;color:#111}' +
-          '</style></head><body><div id="report">' + charts.report + '</div></body></html>');
-        idoc.close();
-        await new Promise(res=>setTimeout(res, 300));      // let SVG/layout settle
-        const el = idoc.getElementById('report');
+        const res = r.value, lt = {theme:'light'}, C = NumCharts, E = NumEngine;
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p','mm','a4');
-        const pageW = pdf.internal.pageSize.getWidth();
-        const pageH = pdf.internal.pageSize.getHeight();
-        const margin = 8, imgW = pageW - margin*2, maxH = pageH - margin*2;
-        let y = margin, first = true;
-        for(const block of Array.from(el.children)){
-          const canvas = await html2canvas(block, {scale:2, backgroundColor:'#ffffff', logging:false});
-          let w = imgW, h = canvas.height * w / canvas.width;
-          if(h > maxH){ const sc = maxH/h; h = maxH; w = w*sc; }   // shrink oversized blocks to one page
-          if(!first && y + h > pageH - margin){ pdf.addPage(); y = margin; }
-          pdf.addImage(canvas.toDataURL('image/jpeg', 0.9), 'JPEG', margin + (imgW-w)/2, y, w, h);
-          y += h + 3; first = false;
+        const pageW = 210, pageH = 297, mx = 12, contentW = pageW - mx*2;
+        const ink=[20,20,24], purple=[106,61,240], muted=[110,110,124];
+        let y = 15;
+        function ensure(h){ if(y + h > pageH - 12){ pdf.addPage(); y = 15; } }
+        function heading(t){
+          ensure(11);
+          pdf.setFont('helvetica','bold'); pdf.setFontSize(11); pdf.setTextColor(purple[0],purple[1],purple[2]);
+          pdf.text(t, mx, y);
+          pdf.setDrawColor(220,220,228); pdf.line(mx, y+1.6, pageW-mx, y+1.6);
+          y += 6.5; pdf.setTextColor(ink[0],ink[1],ink[2]);
         }
-        pdf.save('NAMEMAN - ' + r.value.name + '.pdf');
+        async function chart(svg, maxW){
+          const im = await svgToImage(svg);
+          const w = Math.min(maxW || contentW, contentW), h = w * im.aspect;
+          ensure(h + 3);
+          pdf.addImage(im.data, 'JPEG', mx + (contentW - w)/2, y, w, h);
+          y += h + 5;
+        }
+        function para(text, size){
+          pdf.setFont('helvetica','normal'); pdf.setFontSize(size||10); pdf.setTextColor(ink[0],ink[1],ink[2]);
+          const lines = pdf.splitTextToSize(text, contentW);
+          for(let i=0;i<lines.length;i++){ ensure(5); pdf.text(lines[i], mx, y); y += 4.8; }
+        }
+        // ---- title ----
+        pdf.setFont('helvetica','bold'); pdf.setFontSize(20); pdf.text('NAMEMAN - Numerology Report', mx, y); y += 7;
+        pdf.setFont('helvetica','normal'); pdf.setFontSize(10); pdf.setTextColor(muted[0],muted[1],muted[2]);
+        pdf.text(res.name.toUpperCase() + '   born ' + res.monthName + ' ' + res.dayNum +
+                 '   soul angle ' + res.soulAngle + '° (' + res.quadrant.name + ')', mx, y);
+        y += 8; pdf.setTextColor(ink[0],ink[1],ink[2]);
+        // ---- charts (each chart SVG rasterised) ----
+        heading('Soul Star');                       await chart(C.starChart(res,lt), 120);
+        heading('Soul Compass');                    await chart(C.soulCompass(res,lt), 92);
+        heading('Talents - Dominant to Subordinant');await chart(C.rankChart(res,lt), contentW);
+        heading('Elements');                        await chart(C.bandChart(res,'element',lt), 150);
+        heading('Dimensions');                      await chart(C.bandChart(res,'dimension',lt), 150);
+        heading('Scales (0 to 1000)');              await chart(C.scaleChart(res,lt), 150);
+        heading('Year Mandala');                    await chart(C.yearMandala(res,lt), 120);
+        heading('Future Development (calendar)');   await chart(C.pillarChart(res,'year',lt), contentW);
+        heading('Life Path');                       await chart(C.lifeStream(res,'year',lt), contentW);
+        heading('Music & the Numerology Circle');   await chart(C.musicChart(res,lt), 120);
+        // ---- written reading ----
+        heading('Written Reading');
+        E.reading(res).forEach(function(p){
+          ensure(7); pdf.setFont('helvetica','bold'); pdf.setFontSize(10.5); pdf.text(p.title, mx, y); y += 5;
+          para(p.text, 10); y += 2;
+        });
+        // ---- loves & powers ----
+        heading('Loves & Powers');
+        res.bands.forEach(function(b){
+          ensure(9); pdf.setFont('helvetica','bold'); pdf.setFontSize(10);
+          pdf.text(b.dimension + ' / ' + b.element + '  (' + b.score + ')', mx, y); y += 4.6;
+          para('Loves: ' + b.loves.join(', ') + '     Powers: ' + b.powers.join(', '), 9.5); y += 1.5;
+        });
+        // ---- numerology triangle (levels) ----
+        heading('Numerology Triangle (Levels L1 to L12)');
+        pdf.setFont('courier','normal'); pdf.setFontSize(9); pdf.setTextColor(ink[0],ink[1],ink[2]);
+        for(let z=1; z<=12; z++){ ensure(4.4); pdf.text('L' + (z<10?' ':'') + z + ':  ' + res.firstLevels[z], mx, y); y += 4.3; }
+        y += 3;
+        // ---- all data ----
+        heading('All Data');
+        pdf.setFont('courier','normal'); pdf.setFontSize(9);
+        ensure(4.6); pdf.text('digit  count  score  dimension     element', mx, y); y += 4.4;
+        for(let d=0; d<10; d++){
+          ensure(4.4);
+          pdf.text(pad(d,7) + pad(res.values[d],7) + pad(res.scores[d],7) + pad(E.DIGIT_DIMENSION[d],14) + E.DIGIT_ELEMENT[d], mx, y);
+          y += 4.3;
+        }
+        y += 3; para('Name number: ' + res.nameNum, 8); para('365-digit pyramid: ' + res.numString, 7);
+        y += 5; pdf.setFont('helvetica','normal'); pdf.setFontSize(9); pdf.setTextColor(muted[0],muted[1],muted[2]);
+        ensure(6); pdf.text('NAMEMAN  ·  Where Names Come To Life  ·  Soular-System trademark  ·  © NAMEMAN', mx, y);
+        pdf.save('NAMEMAN - ' + res.name + '.pdf');
       }catch(e){
-        console.error('PDF generation failed, falling back to print', e);
-        window.print();
+        console.error('PDF generation failed', e);
+        alert('Sorry, the PDF could not be generated: ' + e.message);
       }finally{
-        if(frame) frame.remove();
         pdfBusy.value = false;
       }
     }
+    function pad(v, n){ var s = String(v); while(s.length < n) s += ' '; return s; }
 
     function run(){
       if(!name.value.trim()) return;
