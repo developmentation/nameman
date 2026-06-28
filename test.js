@@ -75,7 +75,11 @@ ok('quadrant resolved', !!r.quadrant.name);
 
 console.log('\n=== 8. Bands (6 colour groups) ===');
 eq('6 bands', r.bands.length, 6);
-eq('band counts total = 365', r.bands.reduce(function(a,e){return a+e.count;},0), 365);
+// VOID and EARTH count their twin sector twice -> total = 365 + values[0] + values[5]
+eq('band counts total = 12-sector sum',
+   r.bands.reduce(function(a,e){return a+e.count;},0), 365 + r.values[0] + r.values[5]);
+eq('VOID doubles digit 0', r.bands[0].count, r.values[0]*2);
+eq('EARTH doubles digit 5', r.bands[5].count, r.values[5]*2);
 
 console.log('\n=== 9. Determinism / case-insensitivity ===');
 eq('case-insensitive', E.analyze(NAME.toLowerCase()).scores, r.scores);

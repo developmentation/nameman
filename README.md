@@ -30,7 +30,8 @@ node test.js
 2. **Name number.** The concatenation, left-padded to at least 12 digits.
 3. **BASING(s, n).** A generalised digital root. For each base from 1 to n, fold the last n
    digits onto the rest (added as numbers) until the length is n or less. Base 1 is the ordinary digital root.
-4. **Numerology Triangle.** `B1` through `B12` of the name number, giving `1+2+...+12 = 78` digits.
+4. **Numerology Triangle.** Levels `L1` through `L12` of the name number (each level is a base-1…base-12
+   fold; the UI says "level" rather than "base" to avoid confusion with base-2/base-10), giving `1+2+...+12 = 78` digits.
 5. **3-D Pyramid.** Each triangle row is itself triangulated, giving the sum of triangular
    numbers 1 to 12, which is 364 digits, plus one "birth zero" for 365 total (a digit per day of the year).
 6. **Talents.** Count each digit 0 to 9 in the 365-digit pyramid. The score is `round(count * 1000 / 365)`,
@@ -67,7 +68,8 @@ node test.js
     profiles, plus the soul-angle gap and shared dominant talents, with an overlaid talent radar.
 16. **Written Reading.** A generated narrative covering your Soular System, Forces and Feelings,
     Loves and Powers, and magnetic direction.
-17. **Music & Stars.** A *Piano Keys & the Seven Spinal Stars* wheel. The 7 keys sit on the colour
+17. **Music & Stars.** A *Music & the Numerology Circle* wheel: 12 sectors (0 and 5 are twin sectors) with the
+    12 chromatic notes at the sector edges (B top, F bottom; white vs black keys; B and F dual-nature). The 7 keys sit on the colour
     ring, sized by your colour strengths (B and F are dual nature).
 
 ## How to read your chart

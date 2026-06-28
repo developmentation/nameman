@@ -300,13 +300,12 @@
     if (printAngle >= 360) printAngle -= 360;
     if (printAngle < 0) printAngle += 360;
 
-    // 6 colour bands. Each band has a DIMENSION name, an ELEMENT name and
-    // its LOVES / POWERS trait words.
-    // purple{0}, blue{1,9}, green{2,8}, yellow{3,7}, orange{4,6}, red{5}
+    // 6 colour bands, each summing its TWO sectors of the 12-circle.
+    // 0 and 5 are twin sectors, so VOID and EARTH count their digit twice.
     var bands = BANDS.map(function (b) {
-      var total = b.digits.reduce(function (s, d) { return s + values[d]; }, 0);
+      var total = b.sectors.reduce(function (s, d) { return s + values[d]; }, 0);
       return {
-        color: b.color, digits: b.digits,
+        color: b.color, digits: b.digits, sectors: b.sectors,
         dimension: b.dimension, element: b.element,
         loves: b.loves, powers: b.powers,
         count: total, score: score1000(total)
@@ -515,23 +514,26 @@
 
   // The six colour bands. DIMENSIONS / ELEMENTS / LOVES / POWERS taxonomy,
   // transcribed verbatim from the printed NAMEMAN report.
+  // Each band spans TWO of the 12 numerology-circle sectors (`sectors`).
+  // 0 and 5 are twin sectors, so VOID and EARTH count their digit twice,
+  // keeping all six bands comparable across the 12-sector circle.
   var BANDS = [
-    { color: COLORS.purple, digits: [0],    dimension: 'SPIRITUAL',
+    { color: COLORS.purple, digits: [0],    sectors: [0, 0], dimension: 'SPIRITUAL',
       element: 'VOID',  loves: ['Peace','Contentment','Simplicity'],
       powers: ['Originality','Innovation','Wisdom'] },
-    { color: COLORS.blue,   digits: [1, 9], dimension: 'INTUITIONAL',
+    { color: COLORS.blue,   digits: [1, 9], sectors: [1, 9], dimension: 'INTUITIONAL',
       element: 'SPACE', loves: ['Empathy','Insight','Understanding'],
       powers: ['Initiative','Motivation','Inspiration'] },
-    { color: COLORS.green,  digits: [2, 8], dimension: 'INTELLECTUAL',
+    { color: COLORS.green,  digits: [2, 8], sectors: [2, 8], dimension: 'INTELLECTUAL',
       element: 'AIR',   loves: ['Inquiry','Knowledge','Learning'],
       powers: ['Leadership','Analysis','Organization'] },
-    { color: COLORS.yellow, digits: [3, 7], dimension: 'SENSUAL',
+    { color: COLORS.yellow, digits: [3, 7], sectors: [3, 7], dimension: 'SENSUAL',
       element: 'FIRE',  loves: ['Perceptiveness','Appreciation','Sensitivity'],
       powers: ['Creativity','Artistry','Business'] },
-    { color: COLORS.orange, digits: [4, 6], dimension: 'ENERGETIC',
+    { color: COLORS.orange, digits: [4, 6], sectors: [4, 6], dimension: 'ENERGETIC',
       element: 'WATER', loves: ['Conquest','Challenge','Passion'],
       powers: ['Work','Energy','Action'] },
-    { color: COLORS.red,    digits: [5],    dimension: 'PHYSICAL',
+    { color: COLORS.red,    digits: [5],    sectors: [5, 5], dimension: 'PHYSICAL',
       element: 'EARTH', loves: ['Desire','Fame','Prestige'],
       powers: ['Strength','Ambition','Domination'] }
   ];

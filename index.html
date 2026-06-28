@@ -306,8 +306,10 @@
         </div>
 
         <div v-show="tab==='age'" v-if="ageRows">
-          <p class="hint">Drag through your life. Your talents rise and fall as the year-ring turns from your
-             birth angle, so the mix at age 6 is not the mix at age 60.</p>
+          <p class="hint">Drag through your life. Your talents rise and fall as the <b>year-ring</b> turns from your
+             birth angle, so the mix at age 6 is not the mix at age 60.
+             <span style="color:var(--muted)">The year-ring is your 365-day fingerprint (one digit per day of the year, the same
+             ring shown in the Year Mandala). Each year of life advances one step around it from your birth position.</span></p>
           <div class="agebar">
             <input type="range" min="0" max="90" step="1" v-model.number="age" @input="onAge">
             <div class="ageval">Age <b>{{ age }}</b> · strongest now: <b :style="{color:topAtAge.color}">talent {{ topAtAge.digit }}</b></div>
@@ -343,10 +345,11 @@
           <div class="pyrwrap scrollx" v-html="charts.pyramid"></div>
         </div>
         <div v-show="tab==='music'">
-          <p class="hint"><i>Piano Keys &amp; the Seven Spinal Stars.</i> The seven musical keys sit on the colour
-             ring, each star carrying a black and a white key (B &amp; F are dual nature). Each star is sized by
-             <b>your</b> strength in that colour, so your dominant talents are your brightest stars.
-             <span style="color:#caa">Chakra names below follow the traditional colour correspondence.</span></p>
+          <p class="hint"><i>Music &amp; the Numerology Circle.</i> The 12 sectors hold the digits 0,0,1,2,3,4,5,5,6,7,8,9
+             — <b>0 and 5 are twin sectors</b> at the top and bottom. The 12 chromatic music notes sit at the sector
+             edges (B at top, F at bottom): white keys are light, black keys (♯) are dark. <b>B and F are dual-nature</b>
+             keys (the 0 and 5 keys, both black and white), where a melody can cross from all-white to all-black keys.
+             <span style="color:#caa">The 7 white keys map to the 7 chakras; chakra names below follow the traditional colour correspondence.</span></p>
           <div class="grid">
             <div style="max-width:440px" v-html="charts.music"></div>
             <table class="traits"><thead><tr><th>Key</th><th>Colour → Element</th><th>Chakra (traditional)</th></tr></thead><tbody>
@@ -362,7 +365,10 @@
         </div>
         <div v-show="tab==='compat'">
           <p class="hint">Find out which names are closest to yours. Enter up to five names, separated by commas.
-             Closeness is the correlation of their talent profiles with yours.</p>
+             <b>Closeness</b> is the correlation of their talent profiles with yours.
+             <b>Soul Δ</b> is the gap, in degrees, between their soul angle and yours — the soul angle being the
+             direction of your talent star’s balance point (the needle on the Soul Compass), set by the name alone.
+             <b>Shared</b> lists talents that rank in both top-threes.</p>
           <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
             <input class="name-in" v-model="friends" @keyup.enter="runCompat" placeholder="ENTER NAMES OF FRIENDS (0 to 5), comma-separated">
             <button class="btn" @click="runCompat">Compare</button>
@@ -380,9 +386,11 @@
             <div class="tab" :class="{on:lifeAxis==='age'}" @click="lifeAxis='age';drawLife()">Age</div>
             <div class="tab" :class="{on:lifeAxis==='year'}" @click="lifeAxis='year';drawLife()">Calendar</div>
           </div>
-          <p class="hint">Each of the 10 talents is a strand; its thickness = its strength over time.
-             <b>Life Stream</b> is the additive “shape of your life” (total height = all talents combined);
-             <b>Life Cable</b> braids the same strands as 3-D tubes. Birth-date driven, like the pillars.</p>
+          <p class="hint">Each of the 10 talents is a strand. <b>Only the thickness of a strand carries meaning</b> —
+             it is that talent’s strength at that point in life. In the <b>Life Cable</b> the up-and-down weave is
+             decorative (it just braids the strands into a 3-D rope); a strand’s vertical position means nothing.
+             <b>Life Stream</b> shows the same strands flat and stacked, as the additive “shape of your life”
+             (total height = all talents combined). Both are birth-date driven, like the pillars.</p>
           <div style="max-width:700px;margin:auto" v-html="charts.life"></div>
         </div>
         <div v-show="tab==='traits'">
@@ -402,7 +410,8 @@
           <div style="max-width:660px;margin:auto" v-html="charts.pillar"></div>
         </div>
         <div v-show="tab==='tri'">
-          <p class="hint">Rows B1 to B12 are the base 1 through base 12 reductions of the name number (78 digits).</p>
+          <p class="hint">Rows L1 to L12 are the level 1 through level 12 reductions of the name number (78 digits).
+             “Level” is used instead of “base” to avoid confusion with a mathematical base (base-2, base-10).</p>
           <div class="scrollx" v-html="charts.tri"></div>
         </div>
         <div v-show="tab==='raw'">

@@ -141,7 +141,7 @@
       s.push('<text x="22" y="' + (y + 17) + '" font-size="11" fill="' + T.ink + '">' + e[key] + '</text>');
       s.push('<rect x="' + barX + '" y="' + (y + 4) + '" width="' + bw.toFixed(1) + '" height="18" rx="4" fill="' + e.color + '" stroke="' + T.edge + '" stroke-width="0.5"/>');
       s.push('<text x="' + (barX + 4 + bw).toFixed(1) + '" y="' + (y + 18) + '" font-size="12" fill="' + T.ink +
-             '">' + e.score + '  <tspan fill="' + T.muted + '">(' + e.digits.join(',') + ')</tspan></text>');
+             '">' + e.score + '  <tspan fill="' + T.muted + '">(' + (e.sectors || e.digits).join(',') + ')</tspan></text>');
     });
     s.push('</svg>');
     return s.join('');
@@ -309,7 +309,7 @@
     var maxTs=ev.maxTs||1, n=ev.rows.length, mid=top+plotH/2;
     var x=function(i){return left+(i/(n-1))*plotW;};
     var thick=(plotH*0.16)/maxTs;            // per-strand thickness scale
-    var amp=plotH*0.30, turns=1.6;
+    var amp=plotH*0.22, turns=1.6;   // weave is decorative; only thickness encodes strength
     var s=['<svg viewBox="0 0 '+W+' '+Hh+'" class="evosvg" xmlns="http://www.w3.org/2000/svg">'];
     s.push('<defs>');
     for(var d=0;d<10;d++){
@@ -455,7 +455,7 @@
       var digs = r.firstLevels[z].split('').map(function (c) {
         return '<span class="td" style="background:' + E.DIGIT_COLORS[+c] + '">' + c + '</span>';
       }).join('');
-      tri.push('<div class="trow"><span class="tlbl">B' + z + '</span>' + digs + '</div>');
+      tri.push('<div class="trow"><span class="tlbl">L' + z + '</span>' + digs + '</div>');
     }
     // step 3: the 3-D pyramid, drawn as one coherent SVG (scales to width,
     // single gentle tilt so it never squashes per-row like a CSS-3D stack).
@@ -481,9 +481,9 @@
              E.DIGIT_COLORS[d] + '">' + d + '</b> ' + v + ' → ' + r.scores[d] + '</span>';
     }).join('');
     return '' +
-      '<div class="pstep"><span class="pn">1</span><b>Name to digits</b> (A=01 to Z=26, glued, base-12)' +
+      '<div class="pstep"><span class="pn">1</span><b>Name to digits</b> (A=01 to Z=26, glued, then folded to level 12)' +
         '<div class="mono pmono">' + nn + '</div></div>' +
-      '<div class="pstep"><span class="pn">2</span><b>Numerology Triangle</b>: base 1 to base 12 (78 digits)' +
+      '<div class="pstep"><span class="pn">2</span><b>Numerology Triangle</b>: level 1 to level 12 (L1…L12, 78 digits)' +
         '<div class="triangle">' + tri.join('') + '</div></div>' +
       '<div class="pstep"><span class="pn">3</span><b>3-D Pyramid</b>: each row spawns its own triangle ' +
         '(Σ = 364 digits, +1 birth-zero = 365)' + pyramid + '</div>' +
@@ -491,57 +491,61 @@
         '<div class="cnts">' + counts + '</div></div>';
   }
 
-  /* ---- MUSIC & STARS : the piano-keys / chakra wheel ----------------
-   * Faithful to "PIANO KEYS AND STARS.jpg": the 6-colour mirror ring with
-   * the 7 musical keys placed around it (each star has a black + white key),
-   * B & F "dual nature". Note circles are sized by the analysed name's band
-   * score for that colour, so your strongest colours are your brightest stars.
-   * Chakra names shown are the traditional colour correspondence (NOT written
-   * in the source image, flagged in the UI).
+  /* ---- MUSIC & STARS : the numerology circle + chromatic notes ------
+   * Faithful to the "Music and the Numerology Circle" diagram:
+   *  - 12 sectors hold the digits 0,0,1,2,3,4,5,5,6,7,8,9 (0 & 5 are twin
+   *    sectors at top and bottom).
+   *  - the 12 chromatic notes sit at the sector EDGES, B at the top, F at the
+   *    bottom, going clockwise B C C# D D# E F F# G G# A A#.
+   *  - white keys (no #) are white circles; black keys (#) are dark circles.
+   *  - B and F are dual-nature (the 0 and 5 keys, both black & white).
    * ------------------------------------------------------------------ */
   function musicChart(r, opt) {
     var T = theme(opt);
-    var S = 440, cx = S/2, cy = S/2, rIn = 96, rOut = 188;
-    // 7 keys clockwise from top; angle, the band colour they sit on
-    var KEYS = [
-      { n:'B', deg:0,   band:0, dual:true  },   // crown / violet
-      { n:'C', deg:52,  band:1 },               // blue
-      { n:'D', deg:103, band:2 },               // green
-      { n:'E', deg:154, band:4 },               // orange
-      { n:'F', deg:180, band:5, dual:true },    // root / red
-      { n:'G', deg:257, band:3 },               // yellow
-      { n:'A', deg:308, band:1 }                // blue
+    var S = 460, cx = S/2, cy = S/2 + 6, rIn = 92, rOut = 182;
+    function pt(deg, rr){ var a = deg*DE; return [cx + rr*Math.sin(a), cy - rr*Math.cos(a)]; }
+    // 12 chromatic notes at the sector edges, clockwise from the top
+    var NOTES = [
+      {n:'B',black:false,dual:true}, {n:'C',black:false}, {n:'C#',black:true},
+      {n:'D',black:false}, {n:'D#',black:true}, {n:'E',black:false},
+      {n:'F',black:false,dual:true}, {n:'F#',black:true}, {n:'G',black:false},
+      {n:'G#',black:true}, {n:'A',black:false}, {n:'A#',black:true}
     ];
-    var maxBand = Math.max.apply(null, r.bands.map(function(b){return b.score;})) || 1;
     var s = ['<svg viewBox="0 0 ' + S + ' ' + S + '" class="starsvg" xmlns="http://www.w3.org/2000/svg">'];
     s.push('<rect width="' + S + '" height="' + S + '" fill="' + T.bg + '"/>');
-    // 12-arc mirror-rainbow ring (same palette as the star)
+    // 12 coloured sectors with the digit at each sector centre
     for (var j = 0; j < 12; j++) {
-      var a0 = (30*j - 90)*DE, a1 = (30*j+30 - 90)*DE;
+      var a0 = (30*j - 90)*DE, a1 = (30*j + 30 - 90)*DE;
       s.push('<path d="' + annulusPath(cx, cy, rIn, rOut, a0, a1) + '" fill="' + E.SPOKE_COLORS[j] + '" opacity="0.92"/>');
+      var dp = pt(15 + 30*j, rIn + 22);
+      s.push('<text x="' + dp[0].toFixed(1) + '" y="' + (dp[1]+4).toFixed(1) +
+             '" text-anchor="middle" font-size="13" font-weight="bold" fill="#111">' + E.SPOKE_DIGIT[j] + '</text>');
     }
-    // simple seated meditating figure at centre (grey glyph)
+    // centre: meditating figure + 7-chakra spine (red root -> violet crown)
     s.push('<circle cx="' + cx + '" cy="' + cy + '" r="' + rIn + '" fill="' + T.innerZone + '" stroke="' + T.grid + '"/>');
-    s.push('<circle cx="' + cx + '" cy="' + (cy-34) + '" r="13" fill="#6b6b7a"/>');
-    s.push('<path d="M' + (cx-40) + ' ' + (cy+44) + ' Q' + cx + ' ' + (cy-18) + ' ' + (cx+40) + ' ' + (cy+44) +
-           ' Z" fill="#6b6b7a" opacity="0.85"/>');
-    // chakra dots up the spine (7), bottom red -> top violet
-    var spineCols = [E.COLORS.red,E.COLORS.orange,E.COLORS.yellow,E.COLORS.green,E.COLORS.blue,E.COLORS.blue,E.COLORS.purple];
-    for (var c=0;c<7;c++) s.push('<circle cx="' + cx + '" cy="' + (cy+40-c*13) + '" r="3.4" fill="' + spineCols[c] + '" stroke="#222" stroke-width="0.5"/>');
-    // keys: a black dot (black key) + a white lettered circle (white key)
-    KEYS.forEach(function(k){
-      var a = (k.deg - 90)*DE;
-      var rr = (rIn + rOut)/2;
-      var sz = 9 + (r.bands[k.band].score / maxBand) * 12;   // star size = your colour strength
-      var wx = cx + rr*Math.cos(a), wy = cy + rr*Math.sin(a);
-      var bx = cx + (rr-22)*Math.cos(a), by = cy + (rr-22)*Math.sin(a);
-      s.push('<circle cx="' + bx.toFixed(1) + '" cy="' + by.toFixed(1) + '" r="4.5" fill="#000" stroke="#fff" stroke-width="0.6"/>');
-      s.push('<circle cx="' + wx.toFixed(1) + '" cy="' + wy.toFixed(1) + '" r="' + sz.toFixed(1) + '" fill="#fff" stroke="#000" stroke-width="1.5"' + (k.dual?' stroke-dasharray="3 2"':'') + '/>');
-      s.push('<text x="' + wx.toFixed(1) + '" y="' + (wy+4).toFixed(1) + '" text-anchor="middle" font-size="13" font-weight="bold" fill="#111">' + k.n + '</text>');
+    s.push('<circle cx="' + cx + '" cy="' + (cy-32) + '" r="12" fill="#6b6b7a"/>');
+    s.push('<path d="M' + (cx-38) + ' ' + (cy+42) + ' Q' + cx + ' ' + (cy-16) + ' ' + (cx+38) + ' ' + (cy+42) + ' Z" fill="#6b6b7a" opacity="0.85"/>');
+    var spine = [E.COLORS.red,E.COLORS.orange,E.COLORS.yellow,E.COLORS.green,E.COLORS.blue,E.COLORS.blue,E.COLORS.purple];
+    for (var c = 0; c < 7; c++)
+      s.push('<circle cx="' + cx + '" cy="' + (cy+38-c*12) + '" r="3.2" fill="' + spine[c] + '" stroke="#222" stroke-width="0.5"/>');
+    // the 12 notes at the sector edges
+    NOTES.forEach(function(note, e){
+      var p = pt(30*e, (rIn + rOut)/2);
+      var rad = note.black ? 11 : 13;
+      var fill = note.black ? '#15151c' : '#ffffff';
+      var ink  = note.black ? '#fff' : '#111';
+      s.push('<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="' + rad +
+             '" fill="' + fill + '" stroke="#000" stroke-width="1.4"' + (note.dual ? ' stroke-dasharray="3 2"' : '') + '/>');
+      if (note.dual)  // dual nature: a black half on a white key
+        s.push('<path d="M' + p[0].toFixed(1) + ' ' + (p[1]-rad).toFixed(1) + ' A' + rad + ' ' + rad + ' 0 0 0 ' +
+               p[0].toFixed(1) + ' ' + (p[1]+rad).toFixed(1) + ' Z" fill="#15151c"/>');
+      s.push('<text x="' + p[0].toFixed(1) + '" y="' + (p[1]+ (note.black?3:4)).toFixed(1) +
+             '" text-anchor="middle" font-size="' + (note.black?9:12) + '" font-weight="bold" fill="' +
+             (note.dual ? '#111' : ink) + '">' + note.n + '</text>');
     });
-    s.push('<text x="' + cx + '" y="18" text-anchor="middle" font-size="12" font-weight="bold" fill="' + T.ink + '">Piano Keys &amp; the Seven Spinal Stars</text>');
-    s.push('<text x="' + cx + '" y="' + (S-20) + '" text-anchor="middle" font-size="10" fill="' + T.muted + '">Keys B &amp; F are dual nature (dashed)</text>');
-    s.push('<text x="' + cx + '" y="' + (S-7) + '" text-anchor="middle" font-size="10" fill="' + T.muted + '">Properly composed music tends to awaken the stars</text>');
+    s.push('<text x="' + cx + '" y="18" text-anchor="middle" font-size="12" font-weight="bold" fill="' + T.ink + '">Music &amp; the Numerology Circle</text>');
+    s.push('<text x="' + cx + '" y="' + (S-20) + '" text-anchor="middle" font-size="10" fill="' + T.muted + '">12 sectors (0 &amp; 5 are twin sectors) · a white + a black key at each edge</text>');
+    s.push('<text x="' + cx + '" y="' + (S-7) + '" text-anchor="middle" font-size="10" fill="' + T.muted + '">B (top) &amp; F (bottom) are dual-nature keys</text>');
     s.push('</svg>');
     return s.join('');
   }
@@ -600,7 +604,7 @@
       var digs = r.firstLevels[z].split('').map(function (c) {
         return '<span class="td" style="background:' + E.DIGIT_COLORS[+c] + '">' + c + '</span>';
       }).join('');
-      rows.push('<div class="trow"><span class="tlbl">B' + z + '</span>' + digs + '</div>');
+      rows.push('<div class="trow"><span class="tlbl">L' + z + '</span>' + digs + '</div>');
     }
     return '<div class="triangle">' + rows.join('') + '</div>';
   }
