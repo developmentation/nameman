@@ -181,6 +181,7 @@
     <h1>✶ NAMEMAN Numerology Name Analyzer</h1>
     <span class="sub">The Soular-System™ hidden in your name. Talents, elements, dimensions, centroid, and soul angle.</span>
     <button class="themebtn" @click="downloadPDF" :disabled="pdfBusy">{{ pdfBusy ? '… Generating PDF' : '⤓ Download PDF' }}</button>
+    <button class="themebtn" @click="downloadClassic" :disabled="pdfBusy">{{ pdfBusy ? '…' : '⤓ Classic' }}</button>
     <button class="themebtn" @click="toggleTheme">{{ theme==='dark' ? '☀ Light' : '☾ Dark' }}</button>
   </header>
   <div class="wrap">
@@ -632,6 +633,15 @@ createApp({
     }
 
     const pdfBusy = ref(false);
+    // Classic single-sheet export (faithful to the original printed chart)
+    async function downloadClassic(){
+      if(!r.value || pdfBusy.value) return;
+      if(!window.NumClassic || !window.jspdf){ alert('Classic export is unavailable.'); return; }
+      pdfBusy.value = true;
+      try{ await window.NumClassic.download(r.value, 'NAMEMAN Classic - ' + r.value.name + '.pdf'); }
+      catch(e){ console.error(e); alert('Sorry, the classic PDF could not be generated: ' + e.message); }
+      finally{ pdfBusy.value = false; }
+    }
     async function downloadPDF(){
       if(!r.value || pdfBusy.value) return;
       if(!window.jspdf){                                   // library missing -> print fallback
@@ -639,13 +649,6 @@ createApp({
         window.print(); setTimeout(()=>{document.title=prev;},800); return;
       }
       pdfBusy.value = true;
-      // Classic single-sheet export (faithful to the original printed chart)
-      if(window.NumClassic){
-        try{ await window.NumClassic.download(r.value, 'NAMEMAN - ' + r.value.name + '.pdf'); }
-        catch(e){ console.error(e); alert('Sorry, the PDF could not be generated: ' + e.message); }
-        finally{ pdfBusy.value = false; }
-        return;
-      }
       try{
         const res = r.value, lt = {theme:'light'}, C = NumCharts, E = NumEngine;
         const { jsPDF } = window.jspdf;
@@ -815,7 +818,7 @@ createApp({
     return { name, month, day, months, r, tab, band, pillar, lifeAxis, lifeStyle, theme, friends, charts,
              influence, selLetter, maxMag, topLetters, heat, selectLetter,
              ageRows, age, topAtAge, onAge,
-             noteSeq, playing, playIndex, playName, stopName, downloadPDF, pdfBusy,
+             noteSeq, playing, playIndex, playName, stopName, downloadPDF, downloadClassic, pdfBusy,
              run, drawBand, drawPillar, drawLife, runCompat, toggleTheme, draw:drawBand };
   }
 }).mount('#app');
