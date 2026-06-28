@@ -34,8 +34,8 @@
     for(var i=0;i<12;i++){
       s.push('<path d="'+arcP(cx,cy,Rrim+8,i*30+1.2,i*30+28.8)+'" fill="none" stroke="'+col(res.spoke[i].digit)+'" stroke-width="15"/>');
     }
-    // spokes
-    for(var k=0;k<12;k++){ var ra=k*30*DE; s.push('<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+Rrim*Math.sin(ra)).toFixed(1)+'" y2="'+(cy-Rrim*Math.cos(ra)).toFixed(1)+'" stroke="#9a9a9a" stroke-width="1"/>'); }
+    // sector divider spokes (clearly visible)
+    for(var k=0;k<12;k++){ var ra=k*30*DE; s.push('<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+Rrim*Math.sin(ra)).toFixed(1)+'" y2="'+(cy-Rrim*Math.cos(ra)).toFixed(1)+'" stroke="#7b7b7b" stroke-width="1.4"/>'); }
     s.push('<circle cx="'+cx+'" cy="'+cy+'" r="'+Rrim+'" fill="none" stroke="#000" stroke-width="2"/>');
     // black "hidden" disc (talents < 100)
     var blackR = Math.min(Rrim-2, Rrim*100/MAX);
@@ -46,14 +46,14 @@
       var A=15+30*j, rad=A*DE, val=res.spoke[j].score, dg=res.spoke[j].digit;
       var r=(val/MAX)*rMax, dist=r/H, x=cx+dist*Math.sin(rad), y=cy-dist*Math.cos(rad);
       sw+=r*r; sx+=r*r*x; sy+=r*r*y;
-      P.push({x:x,y:y,r:r*0.95,c:col(dg)});
+      P.push({x:x,y:y,r:r*0.88,c:col(dg)});
     }
     P.forEach(function(p){ s.push('<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+Math.max(p.r,1).toFixed(1)+'" fill="'+p.c+'" stroke="#000" stroke-width="1.5"/>'); });
     var sunx=sw?sx/sw:cx, suny=sw?sy/sw:cy;
-    s.push('<circle cx="'+sunx.toFixed(1)+'" cy="'+suny.toFixed(1)+'" r="34" fill="#fff" stroke="#000" stroke-width="1.5"/>');
-    s.push('<text x="'+sunx.toFixed(1)+'" y="'+(suny+6).toFixed(1)+'" text-anchor="middle" font-size="22" '+FW+'>'+res.soulAngle+'°</text>');
-    // rim digit labels (outside)
-    for(var n=0;n<12;n++){ var a2=(15+30*n)*DE; s.push('<text x="'+(cx+(Rrim+26)*Math.sin(a2)).toFixed(1)+'" y="'+(cy-(Rrim+26)*Math.cos(a2)+5).toFixed(1)+'" text-anchor="middle" font-size="15" '+FW+'>'+res.spoke[n].digit+'</text>'); }
+    s.push('<circle cx="'+sunx.toFixed(1)+'" cy="'+suny.toFixed(1)+'" r="24" fill="#fff" stroke="#000" stroke-width="1.5"/>');
+    s.push('<text x="'+sunx.toFixed(1)+'" y="'+(suny+5).toFixed(1)+'" text-anchor="middle" font-size="17" '+FW+'>'+res.soulAngle+'°</text>');
+    // rim digit labels (just outside the ring)
+    for(var n=0;n<12;n++){ var a2=(15+30*n)*DE; s.push('<text x="'+(cx+(Rrim+14)*Math.sin(a2)).toFixed(1)+'" y="'+(cy-(Rrim+14)*Math.cos(a2)+5).toFixed(1)+'" text-anchor="middle" font-size="15" '+FW+'>'+res.spoke[n].digit+'</text>'); }
   }
 
   function miniWheel(s, res, cx, cy, R){
@@ -150,7 +150,7 @@
     s.push('<text x="594" y="192" font-size="15" '+FW+' text-anchor="middle">SYSTEM</text>');
     legend(s,'DIMENSIONS',20,60,['SPIRITUAL','INTUITIONAL','INTELLECTUAL','SENSUAL','ENERGETIC','PHYSICAL']);
     legend(s,'ELEMENTS',20,392,['VOID','SPACE','AIR','FIRE','WATER','EARTH']);
-    bigWheel(s,res,338,292,222);
+    bigWheel(s,res,352,286,184);
     talentTable(s,res,566,250);
     s.push('<text x="232" y="520" font-size="18" '+FW+' text-anchor="middle">LOVES</text>');
     s.push('<text x="452" y="520" font-size="18" '+FW+' text-anchor="middle">POWERS</text>');
