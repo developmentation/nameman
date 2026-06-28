@@ -20,12 +20,15 @@
   var FW = 'font-weight="700"';
 
   function legend(s, title, x, y, names){
-    s.push('<text x="'+x+'" y="'+y+'" font-size="16" '+FW+'>'+title+'</text>');
+    var w=152, colW=24, rowH=17, boxTop=y+5, boxH=6*rowH;
+    s.push('<text x="'+(x+w/2)+'" y="'+y+'" text-anchor="middle" font-size="15" '+FW+'>'+title+'</text>');
     for(var i=0;i<6;i++){
-      var ry = y + 12 + i*20;
-      s.push('<rect x="'+x+'" y="'+ry+'" width="20" height="16" fill="'+BANDCOL[i]+'" stroke="#000" stroke-width="1"/>');
-      s.push('<text x="'+(x+26)+'" y="'+(ry+13)+'" font-size="13" '+FW+'>'+names[i]+'</text>');
+      var ry = boxTop + i*rowH;
+      s.push('<rect x="'+x+'" y="'+ry+'" width="'+colW+'" height="'+rowH+'" fill="'+BANDCOL[i]+'" stroke="#000" stroke-width="0.8"/>');
+      s.push('<rect x="'+(x+w-colW)+'" y="'+ry+'" width="'+colW+'" height="'+rowH+'" fill="'+BANDCOL[i]+'" stroke="#000" stroke-width="0.8"/>');
+      s.push('<text x="'+(x+w/2)+'" y="'+(ry+rowH/2+4)+'" text-anchor="middle" font-size="11.5" '+FW+'>'+names[i]+'</text>');
     }
+    s.push('<rect x="'+x+'" y="'+boxTop+'" width="'+w+'" height="'+boxH+'" fill="none" stroke="#000" stroke-width="1.5"/>');
   }
 
   function bigWheel(s, res, cx, cy, Rrim){
@@ -34,12 +37,12 @@
     for(var i=0;i<12;i++){
       s.push('<path d="'+arcP(cx,cy,Rrim+8,i*30+1.2,i*30+28.8)+'" fill="none" stroke="'+col(res.spoke[i].digit)+'" stroke-width="15"/>');
     }
-    // sector divider spokes (light gray)
-    for(var k=0;k<12;k++){ var ra=k*30*DE; s.push('<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+Rrim*Math.sin(ra)).toFixed(1)+'" y2="'+(cy-Rrim*Math.cos(ra)).toFixed(1)+'" stroke="#bdbdbd" stroke-width="1.2"/>'); }
-    s.push('<circle cx="'+cx+'" cy="'+cy+'" r="'+Rrim+'" fill="none" stroke="#000" stroke-width="2"/>');
     // black "hidden" disc (talents < 100)
     var blackR = Math.min(Rrim-4, (100/MAX)*rMax*(1/H+1));
     s.push('<circle cx="'+cx+'" cy="'+cy+'" r="'+blackR.toFixed(1)+'" fill="#000"/>');
+    // sector divider spokes (light gray) — drawn over the black disc so they bisect it too
+    for(var k=0;k<12;k++){ var ra=k*30*DE; s.push('<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+Rrim*Math.sin(ra)).toFixed(1)+'" y2="'+(cy-Rrim*Math.cos(ra)).toFixed(1)+'" stroke="#bdbdbd" stroke-width="1.2"/>'); }
+    s.push('<circle cx="'+cx+'" cy="'+cy+'" r="'+Rrim+'" fill="none" stroke="#000" stroke-width="2"/>');
     // planets + area-weighted sun
     var sx=0,sy=0,sw=0, P=[];
     for(var j=0;j<12;j++){
