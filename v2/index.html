@@ -523,6 +523,7 @@
 <script src="vendor/jspdf.umd.min.js"></script>
 <script src="fonts.js"></script>
 <script src="engine.js"></script>
+<script src="classic.js"></script>
 <script src="charts.js"></script>
 <script>
 const { createApp, reactive, ref, computed, watch } = Vue;
@@ -718,6 +719,13 @@ createApp({
         window.print(); setTimeout(()=>{document.title=prev;},800); return;
       }
       pdfBusy.value = true;
+      // Classic single-sheet export (faithful to the original printed chart)
+      if(window.NumClassic){
+        try{ await window.NumClassic.download(r.value, 'NAMEMAN - ' + r.value.name + '.pdf'); }
+        catch(e){ console.error(e); alert('Sorry, the PDF could not be generated: ' + e.message); }
+        finally{ pdfBusy.value = false; }
+        return;
+      }
       try{
         const res = r.value, lt = {theme:'light'}, C = NumCharts, E = NumEngine;
         const { jsPDF } = window.jspdf;
