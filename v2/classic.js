@@ -29,16 +29,16 @@
   }
 
   function bigWheel(s, res, cx, cy, Rrim){
-    var MAX = res.maxScore || 1, rMax = Rrim/(1/H + 1);
+    var MAX = res.maxScore || 1, rMax = (Rrim/(1/H + 1)) * 0.9;   // leave a margin for the digit ring
     // coloured rim
     for(var i=0;i<12;i++){
       s.push('<path d="'+arcP(cx,cy,Rrim+8,i*30+1.2,i*30+28.8)+'" fill="none" stroke="'+col(res.spoke[i].digit)+'" stroke-width="15"/>');
     }
-    // sector divider spokes (clearly visible)
-    for(var k=0;k<12;k++){ var ra=k*30*DE; s.push('<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+Rrim*Math.sin(ra)).toFixed(1)+'" y2="'+(cy-Rrim*Math.cos(ra)).toFixed(1)+'" stroke="#7b7b7b" stroke-width="1.4"/>'); }
+    // sector divider spokes (light gray)
+    for(var k=0;k<12;k++){ var ra=k*30*DE; s.push('<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+Rrim*Math.sin(ra)).toFixed(1)+'" y2="'+(cy-Rrim*Math.cos(ra)).toFixed(1)+'" stroke="#bdbdbd" stroke-width="1.2"/>'); }
     s.push('<circle cx="'+cx+'" cy="'+cy+'" r="'+Rrim+'" fill="none" stroke="#000" stroke-width="2"/>');
     // black "hidden" disc (talents < 100)
-    var blackR = Math.min(Rrim-2, Rrim*100/MAX);
+    var blackR = Math.min(Rrim-4, (100/MAX)*rMax*(1/H+1));
     s.push('<circle cx="'+cx+'" cy="'+cy+'" r="'+blackR.toFixed(1)+'" fill="#000"/>');
     // planets + area-weighted sun
     var sx=0,sy=0,sw=0, P=[];
@@ -52,8 +52,8 @@
     var sunx=sw?sx/sw:cx, suny=sw?sy/sw:cy;
     s.push('<circle cx="'+sunx.toFixed(1)+'" cy="'+suny.toFixed(1)+'" r="24" fill="#fff" stroke="#000" stroke-width="1.5"/>');
     s.push('<text x="'+sunx.toFixed(1)+'" y="'+(suny+5).toFixed(1)+'" text-anchor="middle" font-size="17" '+FW+'>'+res.soulAngle+'°</text>');
-    // rim digit labels (just outside the ring)
-    for(var n=0;n<12;n++){ var a2=(15+30*n)*DE; s.push('<text x="'+(cx+(Rrim+14)*Math.sin(a2)).toFixed(1)+'" y="'+(cy-(Rrim+14)*Math.cos(a2)+5).toFixed(1)+'" text-anchor="middle" font-size="15" '+FW+'>'+res.spoke[n].digit+'</text>'); }
+    // rim digit labels (inside the ring, in the clear annulus)
+    for(var n=0;n<12;n++){ var a2=(15+30*n)*DE; s.push('<text x="'+(cx+(Rrim-15)*Math.sin(a2)).toFixed(1)+'" y="'+(cy-(Rrim-15)*Math.cos(a2)+5).toFixed(1)+'" text-anchor="middle" font-size="15" '+FW+'>'+res.spoke[n].digit+'</text>'); }
   }
 
   function miniWheel(s, res, cx, cy, R){
@@ -74,7 +74,7 @@
       s.push('<rect x="'+(x+16)+'" y="'+ry+'" width="56" height="18" fill="'+col(t.digit)+'" stroke="#000" stroke-width="1"/>');
       s.push('<text x="'+(x+44)+'" y="'+(ry+14)+'" font-size="13" '+FW+' text-anchor="middle">'+t.score+'</text>');
     });
-    var by = y + 28 + 10*23 + 6;
+    var by = y + 28 + 10*23 + 18;
     s.push('<text x="'+(x+44)+'" y="'+by+'" font-size="13" '+FW+' text-anchor="middle">SUBORDINANT</text>');
     s.push('<text x="'+(x+44)+'" y="'+(by+15)+'" font-size="13" '+FW+' text-anchor="middle">TALENTS</text>');
   }
@@ -115,8 +115,10 @@
     var pw = W - divx, cxp = divx + pw/2;
     s.push('<text x="'+cxp+'" y="38" text-anchor="middle" font-size="17" '+FW+'>NAMEMAN SHOWS THE <tspan text-decoration="underline">SOULAR-SYSTEM</tspan> HIDDEN IN YOUR NAME</text>');
     var top = 56, foot = 86, rowH = (Hh - top - foot)/6;
-    var lovesX = divx + 150, c1 = divx + 305, c2 = divx + 392, powX = divx + 545;
+    var lovesX = divx + 162, c1 = cxp - 46, c2 = cxp + 46, powX = W - 162;
     var maxS = Math.max.apply(null, res.bands.map(function(b){return b.score;})) || 1;
+    // central vertical divider (between the two circle columns)
+    s.push('<line x1="'+cxp+'" y1="'+top+'" x2="'+cxp+'" y2="'+(top+6*rowH)+'" stroke="#000" stroke-width="1.5"/>');
     res.bands.forEach(function(b,i){
       var ry = top + i*rowH, cy = ry + rowH/2;
       if(i>0) s.push('<line x1="'+divx+'" y1="'+ry+'" x2="'+W+'" y2="'+ry+'" stroke="#000" stroke-width="1.5"/>');
