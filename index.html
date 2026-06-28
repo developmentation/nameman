@@ -345,8 +345,8 @@
           <div class="pyrwrap scrollx" v-html="charts.pyramid"></div>
         </div>
         <div v-show="tab==='music'">
-          <p class="hint"><i>Music &amp; the Numerology Circle.</i> The 12 sectors hold the digits 0,0,1,2,3,4,5,5,6,7,8,9
-             — <b>0 and 5 are twin sectors</b> at the top and bottom. The 12 chromatic music notes sit at the sector
+          <p class="hint"><i>Music &amp; the Numerology Circle.</i> The 12 sectors hold the digits 0,0,1,2,3,4,5,5,6,7,8,9,
+             where <b>0 and 5 are twin sectors</b> at the top and bottom. The 12 chromatic music notes sit at the sector
              edges (B at top, F at bottom): white keys are light, black keys (♯) are dark. <b>B and F are dual-nature</b>
              keys (the 0 and 5 keys, both black and white), where a melody can cross from all-white to all-black keys.
              <span style="color:#caa">The 7 white keys map to the 7 chakras; chakra names below follow the traditional colour correspondence.</span></p>
@@ -366,7 +366,7 @@
         <div v-show="tab==='compat'">
           <p class="hint">Find out which names are closest to yours. Enter up to five names, separated by commas.
              <b>Closeness</b> is the correlation of their talent profiles with yours.
-             <b>Soul Δ</b> is the gap, in degrees, between their soul angle and yours — the soul angle being the
+             <b>Soul Δ</b> is the gap, in degrees, between their soul angle and yours, the soul angle being the
              direction of your talent star’s balance point (the needle on the Soul Compass), set by the name alone.
              <b>Shared</b> lists talents that rank in both top-threes.</p>
           <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
@@ -386,7 +386,7 @@
             <div class="tab" :class="{on:lifeAxis==='age'}" @click="lifeAxis='age';drawLife()">Age</div>
             <div class="tab" :class="{on:lifeAxis==='year'}" @click="lifeAxis='year';drawLife()">Calendar</div>
           </div>
-          <p class="hint">Each of the 10 talents is a strand. <b>Only the thickness of a strand carries meaning</b> —
+          <p class="hint">Each of the 10 talents is a strand. <b>Only the thickness of a strand carries meaning:</b>
              it is that talent’s strength at that point in life. In the <b>Life Cable</b> the up-and-down weave is
              decorative (it just braids the strands into a 3-D rope); a strand’s vertical position means nothing.
              <b>Life Stream</b> shows the same strands flat and stacked, as the additive “shape of your life”
@@ -578,13 +578,13 @@ createApp({
       const reading = E.reading(res).map(p=>`<div class="rp"><h3>${p.title}</h3><div>${p.text}</div></div>`).join('');
       let when=''; try{ when=' · generated '+new Date().toLocaleDateString(); }catch(e){}
       return `
-        <div class="rtitle">NAMEMAN — Numerology Report</div>
+        <div class="rtitle">NAMEMAN Numerology Report</div>
         <div class="rsub">${res.name.toUpperCase()} · born ${res.monthName} ${res.dayNum} · soul angle ${res.soulAngle}° (${res.quadrant.name})${when}</div>
         <div class="rsec rrow">
           <div><h2>Soul Star</h2><div class="rstar">${C.starChart(res,lt)}</div></div>
           <div><h2>Soul Compass</h2><div class="rcompass">${C.soulCompass(res,lt)}</div></div>
         </div>
-        <div class="rsec"><h2>Talents — Dominant to Subordinant</h2>${C.rankChart(res,lt)}</div>
+        <div class="rsec"><h2>Talents: Dominant to Subordinant</h2>${C.rankChart(res,lt)}</div>
         <div class="rsec rrow">
           <div><h2>Elements</h2>${C.bandChart(res,'element',lt)}</div>
           <div><h2>Dimensions</h2>${C.bandChart(res,'dimension',lt)}</div>
@@ -644,74 +644,128 @@ createApp({
         const pdf = new jsPDF('p','mm','a4');
         const pageW = 210, pageH = 297, mx = 12, contentW = pageW - mx*2;
         const ink=[20,20,24], purple=[106,61,240], muted=[110,110,124];
-        let y = 15;
-        function ensure(h){ if(y + h > pageH - 12){ pdf.addPage(); y = 15; } }
+        const soft=[244,244,251], line=[226,226,234];
+        let y = 0;
+        function ensure(h){ if(y + h > pageH - 14){ pdf.addPage(); y = 16; } }
         function heading(t){
-          ensure(11);
-          pdf.setFont('helvetica','bold'); pdf.setFontSize(11); pdf.setTextColor(purple[0],purple[1],purple[2]);
-          pdf.text(t, mx, y);
-          pdf.setDrawColor(220,220,228); pdf.line(mx, y+1.6, pageW-mx, y+1.6);
-          y += 6.5; pdf.setTextColor(ink[0],ink[1],ink[2]);
+          ensure(13); y += 2;
+          pdf.setFillColor(purple[0],purple[1],purple[2]); pdf.rect(mx, y-3.5, 2.4, 3.6, 'F');
+          pdf.setFont('helvetica','bold'); pdf.setFontSize(11.5); pdf.setTextColor(purple[0],purple[1],purple[2]);
+          pdf.text(t, mx+4.6, y);
+          pdf.setDrawColor(line[0],line[1],line[2]); pdf.line(mx, y+2.2, pageW-mx, y+2.2);
+          y += 7; pdf.setTextColor(ink[0],ink[1],ink[2]);
+        }
+        function desc(t){
+          pdf.setFont('helvetica','italic'); pdf.setFontSize(8.6); pdf.setTextColor(112,112,126);
+          const lines = pdf.splitTextToSize(t, contentW);
+          for(let i=0;i<lines.length;i++){ ensure(4.4); pdf.text(lines[i], mx, y); y += 4.1; }
+          y += 2; pdf.setTextColor(ink[0],ink[1],ink[2]);
         }
         async function chart(svg, maxW){
           const im = await svgToImage(svg);
           const w = Math.min(maxW || contentW, contentW), h = w * im.aspect;
-          ensure(h + 3);
+          ensure(h + 4);
           pdf.addImage(im.data, 'JPEG', mx + (contentW - w)/2, y, w, h);
-          y += h + 5;
+          y += h + 6;
         }
         function para(text, size){
           pdf.setFont('helvetica','normal'); pdf.setFontSize(size||10); pdf.setTextColor(ink[0],ink[1],ink[2]);
           const lines = pdf.splitTextToSize(text, contentW);
           for(let i=0;i<lines.length;i++){ ensure(5); pdf.text(lines[i], mx, y); y += 4.8; }
         }
-        // ---- title ----
-        pdf.setFont('helvetica','bold'); pdf.setFontSize(20); pdf.text('NAMEMAN - Numerology Report', mx, y); y += 7;
+        function statBox(x, w, label, value){
+          pdf.setFillColor(soft[0],soft[1],soft[2]); pdf.roundedRect(x, y, w, 15, 1.6,1.6,'F');
+          pdf.setFont('helvetica','normal'); pdf.setFontSize(7); pdf.setTextColor(122,122,138);
+          pdf.text(label.toUpperCase(), x+3.2, y+5);
+          pdf.setFont('helvetica','bold'); pdf.setFontSize(12); pdf.setTextColor(ink[0],ink[1],ink[2]);
+          pdf.text(String(value), x+3.2, y+11.5);
+        }
+        // section descriptions (ported from the app UI)
+        const D = {
+          star:'Twelve sectors of 30 degrees. Each circle\'s radius is its talent score; the white sun is the area-weighted balance point (centroid), and the dark inner zone hides any talent scoring under 100.',
+          compass:'Your soul angle shown as a magnetic-direction dial: the centroid of the talent star projected onto four quadrants. It is set by your name alone.',
+          talents:'How often each digit appears in your 365-digit pyramid, scaled to a 1000 base and ranked from your most dominant talent down to the most subordinant.',
+          elements:'The six colour bands of the numerology circle. Each band sums its two sectors; 0 and 5 are twin sectors, so Void and Earth count their digit twice.',
+          dimensions:'The same six colour bands, named as the dimensions of character, from Spiritual through to Physical.',
+          scales:'Every digit on a 0 to 1000 gauge. The line at 100 marks the threshold below which a talent is considered hidden or still-forming.',
+          mandala:'Your 365-day fingerprint laid around the year, each day coloured by its digit. Clusters of a colour are your strong talents; the star marks your birthday.',
+          future:'Each digit\'s strength across the calendar year. Wider paths are times of greater opportunity; lighter shading means more karmic help.',
+          life:'The ten talents drawn as strands. Only the thickness of a strand carries meaning: that talent\'s strength over life. The total height is the additive shape of your life.',
+          music:'The 12 sectors carry your digits (0 and 5 are twin sectors). The 12 chromatic notes sit at the sector edges, B at the top and F at the bottom, as white and black keys; B and F are dual-nature.',
+          reading:'A plain-language interpretation of your chart, in the system\'s own vocabulary.',
+          loves:'Each colour band has a receptive side (Loves) and an active side (Powers).',
+          triangle:'The name number reduced at each level L1 to L12 (78 digits in all), the source from which the pyramid is built.',
+          data:'The underlying digit counts and scores, plus the full 365-digit pyramid string.'
+        };
+        // ---- cover ----
+        pdf.setFillColor(purple[0],purple[1],purple[2]); pdf.rect(0,0,pageW,4,'F');   // top accent bar
+        y = 20;
+        pdf.setFont('helvetica','bold'); pdf.setFontSize(24); pdf.setTextColor(ink[0],ink[1],ink[2]); pdf.text('NAMEMAN', mx, y);
+        pdf.setFont('helvetica','normal'); pdf.setFontSize(11); pdf.setTextColor(muted[0],muted[1],muted[2]);
+        pdf.text('Numerology Name Analysis', mx, y+6);
+        y += 16;
+        pdf.setFont('helvetica','bold'); pdf.setFontSize(17); pdf.setTextColor(ink[0],ink[1],ink[2]); pdf.text(res.name.toUpperCase(), mx, y); y += 6.5;
         pdf.setFont('helvetica','normal'); pdf.setFontSize(10); pdf.setTextColor(muted[0],muted[1],muted[2]);
-        pdf.text(res.name.toUpperCase() + '   born ' + res.monthName + ' ' + res.dayNum +
-                 '   soul angle ' + res.soulAngle + '° (' + res.quadrant.name + ')', mx, y);
-        y += 8; pdf.setTextColor(ink[0],ink[1],ink[2]);
-        // ---- charts (each chart SVG rasterised) ----
-        heading('Soul Star');                       await chart(C.starChart(res,lt), 120);
-        heading('Soul Compass');                    await chart(C.soulCompass(res,lt), 92);
-        heading('Talents - Dominant to Subordinant');await chart(C.rankChart(res,lt), contentW);
-        heading('Elements');                        await chart(C.bandChart(res,'element',lt), 150);
-        heading('Dimensions');                      await chart(C.bandChart(res,'dimension',lt), 150);
-        heading('Scales (0 to 1000)');              await chart(C.scaleChart(res,lt), 150);
-        heading('Year Mandala');                    await chart(C.yearMandala(res,lt), 120);
-        heading('Future Development (calendar)');   await chart(C.pillarChart(res,'year',lt), contentW);
-        heading('Life Path');                       await chart(C.lifeStream(res,'year',lt), contentW);
-        heading('Music & the Numerology Circle');   await chart(C.musicChart(res,lt), 120);
+        pdf.text('Born ' + res.monthName + ' ' + res.dayNum, mx, y); y += 7;
+        desc('This report reveals the Soular-System hidden in your name: the talents, elements and dimensions it encodes, the balance point and magnetic direction of your character, and how those energies rise and fall across a life.');
+        // stats strip
+        y += 1;
+        const gp = 4, bw = (contentW - gp*3)/4;
+        statBox(mx,            bw, 'Soul angle', res.soulAngle + '°');
+        statBox(mx+(bw+gp),    bw, 'Quadrant',   res.quadrant.name);
+        statBox(mx+(bw+gp)*2,  bw, 'Strongest',  res.ranked[0].digit + ' / ' + res.ranked[0].score);
+        statBox(mx+(bw+gp)*3,  bw, 'Weakest',    res.ranked[9].digit + ' / ' + res.ranked[9].score);
+        y += 15 + 4;
+        // ---- sections (chart + ported explanation) ----
+        heading('Soul Star');                        desc(D.star);    await chart(C.starChart(res,lt), 118);
+        heading('Soul Compass');                     desc(D.compass); await chart(C.soulCompass(res,lt), 92);
+        heading('Talents: Dominant to Subordinant'); desc(D.talents); await chart(C.rankChart(res,lt), contentW);
+        heading('Elements');                         desc(D.elements);await chart(C.bandChart(res,'element',lt), 150);
+        heading('Dimensions');                       desc(D.dimensions);await chart(C.bandChart(res,'dimension',lt), 150);
+        heading('Scales (0 to 1000)');               desc(D.scales);  await chart(C.scaleChart(res,lt), 150);
+        heading('Year Mandala');                     desc(D.mandala); await chart(C.yearMandala(res,lt), 118);
+        heading('Future Development');               desc(D.future);  await chart(C.pillarChart(res,'year',lt), contentW);
+        heading('Life Path');                        desc(D.life);    await chart(C.lifeStream(res,'year',lt), contentW);
+        heading('Music & the Numerology Circle');    desc(D.music);   await chart(C.musicChart(res,lt), 118);
         // ---- written reading ----
-        heading('Written Reading');
+        heading('Written Reading'); desc(D.reading);
         E.reading(res).forEach(function(p){
-          ensure(7); pdf.setFont('helvetica','bold'); pdf.setFontSize(10.5); pdf.text(p.title, mx, y); y += 5;
-          para(p.text, 10); y += 2;
+          ensure(8); pdf.setFont('helvetica','bold'); pdf.setFontSize(10.5); pdf.setTextColor(purple[0],purple[1],purple[2]);
+          pdf.text(p.title, mx, y); y += 5; pdf.setTextColor(ink[0],ink[1],ink[2]);
+          para(p.text, 10); y += 2.5;
         });
         // ---- loves & powers ----
-        heading('Loves & Powers');
+        heading('Loves & Powers'); desc(D.loves);
         res.bands.forEach(function(b){
-          ensure(9); pdf.setFont('helvetica','bold'); pdf.setFontSize(10);
-          pdf.text(b.dimension + ' / ' + b.element + '  (' + b.score + ')', mx, y); y += 4.6;
-          para('Loves: ' + b.loves.join(', ') + '     Powers: ' + b.powers.join(', '), 9.5); y += 1.5;
+          ensure(10); pdf.setFont('helvetica','bold'); pdf.setFontSize(10); pdf.setTextColor(ink[0],ink[1],ink[2]);
+          pdf.text(b.dimension + '  /  ' + b.element + '   (' + b.score + ')', mx, y); y += 4.7;
+          para('Loves: ' + b.loves.join(', ') + '      Powers: ' + b.powers.join(', '), 9.5); y += 2;
         });
-        // ---- numerology triangle (levels) ----
-        heading('Numerology Triangle (Levels L1 to L12)');
+        // ---- numerology triangle ----
+        heading('Numerology Triangle (Levels L1 to L12)'); desc(D.triangle);
         pdf.setFont('courier','normal'); pdf.setFontSize(9); pdf.setTextColor(ink[0],ink[1],ink[2]);
         for(let z=1; z<=12; z++){ ensure(4.4); pdf.text('L' + (z<10?' ':'') + z + ':  ' + res.firstLevels[z], mx, y); y += 4.3; }
         y += 3;
         // ---- all data ----
-        heading('All Data');
+        heading('All Data'); desc(D.data);
         pdf.setFont('courier','normal'); pdf.setFontSize(9);
-        ensure(4.6); pdf.text('digit  count  score  dimension     element', mx, y); y += 4.4;
+        ensure(4.6); pdf.setTextColor(122,122,138); pdf.text('digit  count  score  dimension     element', mx, y); y += 4.4;
+        pdf.setTextColor(ink[0],ink[1],ink[2]);
         for(let d=0; d<10; d++){
           ensure(4.4);
           pdf.text(pad(d,7) + pad(res.values[d],7) + pad(res.scores[d],7) + pad(E.DIGIT_DIMENSION[d],14) + E.DIGIT_ELEMENT[d], mx, y);
           y += 4.3;
         }
         y += 3; para('Name number: ' + res.nameNum, 8); para('365-digit pyramid: ' + res.numString, 7);
-        y += 5; pdf.setFont('helvetica','normal'); pdf.setFontSize(9); pdf.setTextColor(muted[0],muted[1],muted[2]);
-        ensure(6); pdf.text('NAMEMAN  ·  Where Names Come To Life  ·  Soular-System trademark  ·  © NAMEMAN', mx, y);
+        // ---- page-number footers ----
+        const total = pdf.internal.getNumberOfPages();
+        for(let p=1; p<=total; p++){
+          pdf.setPage(p);
+          pdf.setDrawColor(line[0],line[1],line[2]); pdf.line(mx, pageH-10, pageW-mx, pageH-10);
+          pdf.setFont('helvetica','normal'); pdf.setFontSize(8); pdf.setTextColor(150,150,162);
+          pdf.text('NAMEMAN  ·  ' + res.name.toUpperCase(), mx, pageH-6);
+          pdf.text('Page ' + p + ' of ' + total, pageW-mx, pageH-6, {align:'right'});
+        }
         pdf.save('NAMEMAN - ' + res.name + '.pdf');
       }catch(e){
         console.error('PDF generation failed', e);
