@@ -89,7 +89,7 @@
   function rankChart(r, opt) {
     var T = theme(opt);
     var max = r.ranked[0].score || 1;
-    var W = 460, rowH = 32, barX = 168, valX = W - 8, barMax = W - barX - 58;
+    var W = 520, rowH = 32, barX = 208, valX = W - 6, barMax = W - barX - 52;
     var s = ['<svg viewBox="0 0 ' + W + ' ' + (r.ranked.length * rowH + 8) +
              '" class="barsvg" xmlns="http://www.w3.org/2000/svg">'];
     r.ranked.forEach(function (t, i) {
@@ -97,7 +97,7 @@
       var col = E.DIGIT_COLORS[t.digit], bw = (t.score / max) * barMax;
       var elU = E.DIGIT_ELEMENT[t.digit], el = elU.charAt(0) + elU.slice(1).toLowerCase();
       var band = E.BANDS[E.DIGIT_BAND[t.digit]];
-      var dsc = band ? (band.powers[0] + ' & ' + band.powers[1].toLowerCase()) : '';
+      var dsc = band ? (band.powers[0] + ' &amp; ' + band.powers[1].toLowerCase()) : '';
       s.push('<text x="2" y="' + (cy+4) + '" font-size="10" ' + MONO + ' fill="' + T.muted + '">#' + (i+1) + '</text>');
       s.push('<rect x="22" y="' + (cy-6) + '" width="21" height="21" rx="6" fill="' + col + '"/>');
       s.push('<text x="32.5" y="' + (cy+5) + '" text-anchor="middle" font-size="12" font-weight="700" ' + MONO + ' fill="#fff">' + t.digit + '</text>');
