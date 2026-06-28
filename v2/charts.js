@@ -85,21 +85,27 @@
            ' A' + r0 + ' ' + r0 + ' 0 ' + large + ' 0 ' + D[0].toFixed(2) + ' ' + D[1].toFixed(2) + ' Z';
   }
 
-  /* ---- RANKED TALENTS : dominant -> subordinant bars --------------- */
+  /* ---- RANKED TALENTS : name + descriptor + bar + value ----------- */
   function rankChart(r, opt) {
     var T = theme(opt);
     var max = r.ranked[0].score || 1;
-    var W = 360, rowH = 26, pad = 70;
-    var s = ['<svg viewBox="0 0 ' + (W + pad) + ' ' + (r.ranked.length * rowH + 10) +
+    var W = 460, rowH = 32, barX = 168, valX = W - 8, barMax = W - barX - 58;
+    var s = ['<svg viewBox="0 0 ' + W + ' ' + (r.ranked.length * rowH + 8) +
              '" class="barsvg" xmlns="http://www.w3.org/2000/svg">'];
     r.ranked.forEach(function (t, i) {
-      var y = i * rowH + 6, bw = (t.score / max) * W;
-      s.push('<text x="2" y="' + (y + 15) + '" font-size="12" fill="' + T.ink + '">#' + (i + 1) + '</text>');
-      s.push('<rect x="26" y="' + y + '" width="18" height="18" rx="3" fill="' +
-             E.DIGIT_COLORS[t.digit] + '" stroke="' + T.edge + '"/>');
-      s.push('<text x="35" y="' + (y + 14) + '" font-size="12" font-weight="bold" text-anchor="middle" fill="#111">' + t.digit + '</text>');
-      s.push('<rect x="50" y="' + (y + 2) + '" width="' + bw.toFixed(1) + '" height="14" rx="3" fill="' + E.DIGIT_COLORS[t.digit] + '"/>');
-      s.push('<text x="' + (54 + bw).toFixed(1) + '" y="' + (y + 14) + '" font-size="12" fill="' + T.ink + '">' + t.score + '</text>');
+      var cy = i * rowH + rowH/2 + 4;
+      var col = E.DIGIT_COLORS[t.digit], bw = (t.score / max) * barMax;
+      var elU = E.DIGIT_ELEMENT[t.digit], el = elU.charAt(0) + elU.slice(1).toLowerCase();
+      var band = E.BANDS[E.DIGIT_BAND[t.digit]];
+      var dsc = band ? (band.powers[0] + ' & ' + band.powers[1].toLowerCase()) : '';
+      s.push('<text x="2" y="' + (cy+4) + '" font-size="10" ' + MONO + ' fill="' + T.muted + '">#' + (i+1) + '</text>');
+      s.push('<rect x="22" y="' + (cy-6) + '" width="21" height="21" rx="6" fill="' + col + '"/>');
+      s.push('<text x="32.5" y="' + (cy+5) + '" text-anchor="middle" font-size="12" font-weight="700" ' + MONO + ' fill="#fff">' + t.digit + '</text>');
+      s.push('<text x="52" y="' + (cy) + '" font-size="12.5" font-weight="600" fill="' + T.ink + '">' + el + '</text>');
+      s.push('<text x="52" y="' + (cy+10) + '" font-size="9.5" fill="' + T.muted + '">' + dsc + '</text>');
+      s.push('<rect x="' + barX + '" y="' + (cy-6) + '" width="' + barMax + '" height="13" rx="6" fill="' + T.track + '"/>');
+      s.push('<rect x="' + barX + '" y="' + (cy-6) + '" width="' + bw.toFixed(1) + '" height="13" rx="6" fill="' + col + '"/>');
+      s.push('<text x="' + valX + '" y="' + (cy+4) + '" text-anchor="end" font-size="13" font-weight="700" ' + MONO + ' fill="' + T.ink + '">' + t.score + '</text>');
     });
     s.push('</svg>');
     return s.join('');

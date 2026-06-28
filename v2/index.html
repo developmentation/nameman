@@ -521,6 +521,7 @@
 </div>
 
 <script src="vendor/jspdf.umd.min.js"></script>
+<script src="fonts.js"></script>
 <script src="engine.js"></script>
 <script src="charts.js"></script>
 <script>
@@ -721,6 +722,7 @@ createApp({
         const res = r.value, lt = {theme:'light'}, C = NumCharts, E = NumEngine;
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p','mm','a4');
+        if(window.registerPdfFonts){ try{ window.registerPdfFonts(pdf); }catch(e){} }
         const pageW = 210, pageH = 297, mx = 12, contentW = pageW - mx*2;
         const ink=[20,20,24], purple=[106,61,240], muted=[110,110,124];
         const soft=[244,244,251], line=[226,226,234];
@@ -729,13 +731,13 @@ createApp({
         function heading(t){
           ensure(13); y += 2;
           pdf.setFillColor(purple[0],purple[1],purple[2]); pdf.rect(mx, y-3.5, 2.4, 3.6, 'F');
-          pdf.setFont('helvetica','bold'); pdf.setFontSize(11.5); pdf.setTextColor(purple[0],purple[1],purple[2]);
+          pdf.setFont('Hanken','bold'); pdf.setFontSize(11.5); pdf.setTextColor(purple[0],purple[1],purple[2]);
           pdf.text(t, mx+4.6, y);
           pdf.setDrawColor(line[0],line[1],line[2]); pdf.line(mx, y+2.2, pageW-mx, y+2.2);
           y += 7; pdf.setTextColor(ink[0],ink[1],ink[2]);
         }
         function desc(t){
-          pdf.setFont('helvetica','italic'); pdf.setFontSize(8.6); pdf.setTextColor(112,112,126);
+          pdf.setFont('Hanken','normal'); pdf.setFontSize(8.6); pdf.setTextColor(112,112,126);
           const lines = pdf.splitTextToSize(t, contentW);
           for(let i=0;i<lines.length;i++){ ensure(4.4); pdf.text(lines[i], mx, y); y += 4.1; }
           y += 2; pdf.setTextColor(ink[0],ink[1],ink[2]);
@@ -748,7 +750,7 @@ createApp({
           let w = Math.min(maxW || contentW, contentW), ih = w * im.aspect;
           const cap = maxH || 100;                                 // cap height so two sections pair per page
           if(ih > cap){ const s2 = cap/ih; ih *= s2; w *= s2; }
-          pdf.setFont('helvetica','italic'); pdf.setFontSize(8.6);
+          pdf.setFont('Hanken','normal'); pdf.setFontSize(8.6);
           const dl = pdf.splitTextToSize(dtext, contentW);
           const headH = 9, descH = dl.length*4.1 + 2;
           const avail = (pageH - 14) - 16 - headH - descH;         // hard limit: chart space on a fresh page
@@ -759,15 +761,15 @@ createApp({
           y += ih + 8;
         }
         function para(text, size){
-          pdf.setFont('helvetica','normal'); pdf.setFontSize(size||10); pdf.setTextColor(ink[0],ink[1],ink[2]);
+          pdf.setFont('Hanken','normal'); pdf.setFontSize(size||10); pdf.setTextColor(ink[0],ink[1],ink[2]);
           const lines = pdf.splitTextToSize(text, contentW);
           for(let i=0;i<lines.length;i++){ ensure(5); pdf.text(lines[i], mx, y); y += 4.8; }
         }
         function statBox(x, w, label, value){
           pdf.setFillColor(soft[0],soft[1],soft[2]); pdf.roundedRect(x, y, w, 15, 1.6,1.6,'F');
-          pdf.setFont('helvetica','normal'); pdf.setFontSize(7); pdf.setTextColor(122,122,138);
+          pdf.setFont('Hanken','normal'); pdf.setFontSize(7); pdf.setTextColor(122,122,138);
           pdf.text(label.toUpperCase(), x+3.2, y+5);
-          pdf.setFont('helvetica','bold'); pdf.setFontSize(12); pdf.setTextColor(ink[0],ink[1],ink[2]);
+          pdf.setFont('Hanken','bold'); pdf.setFontSize(12); pdf.setTextColor(ink[0],ink[1],ink[2]);
           pdf.text(String(value), x+3.2, y+11.5);
         }
         // section descriptions (ported from the app UI)
@@ -798,17 +800,17 @@ createApp({
         // wordmark + star glyph
         pdf.setDrawColor(154,139,255); pdf.setLineWidth(0.5);
         pdf.line(mx+2,18,mx+2,26); pdf.line(mx-2,22,mx+6,22); pdf.line(mx-1,19,mx+5,25); pdf.line(mx-1,25,mx+5,19);
-        pdf.setFont('helvetica','bold'); pdf.setFontSize(13); pdf.setTextColor(255,255,255); pdf.text('nameman', mx+10, 24);
-        pdf.setFont('courier','normal'); pdf.setFontSize(8); pdf.setTextColor(142,138,174);
-        pdf.text('SOULAR-SYSTEM™ REPORT', pageW-mx, 24, {align:'right'});
+        pdf.setFont('Hanken','bold'); pdf.setFontSize(13); pdf.setTextColor(255,255,255); pdf.text('nameman', mx+10, 24);
+        pdf.setFont('GeistMono','normal'); pdf.setFontSize(8); pdf.setTextColor(142,138,174);
+        pdf.text('SOULAR-SYSTEM REPORT', pageW-mx, 24, {align:'right'});
         // dark soul star, centered (dark canvas bg so it blends with the cover)
         var coverStar = await svgToImage(C.starChart(res, {theme:'dark'}), '#0A0913');
         var cw = 112, ch = cw*coverStar.aspect;
         pdf.addImage(coverStar.data, 'JPEG', (pageW-cw)/2, 64, cw, ch);
         var ty = 64 + ch + 24;
-        pdf.setFont('courier','normal'); pdf.setFontSize(9); pdf.setTextColor(185,180,230); pdf.text('T H E   M A P   O F', pageW/2, ty, {align:'center'});
-        pdf.setFont('helvetica','bold'); pdf.setFontSize(33); pdf.setTextColor(255,255,255); pdf.text(res.name, pageW/2, ty+13, {align:'center'});
-        pdf.setFont('courier','normal'); pdf.setFontSize(10); pdf.setTextColor(150,146,182); pdf.text('born ' + monthCap + ' ' + res.dayNum, pageW/2, ty+21, {align:'center'});
+        pdf.setFont('GeistMono','normal'); pdf.setFontSize(9); pdf.setTextColor(185,180,230); pdf.text('T H E   M A P   O F', pageW/2, ty, {align:'center'});
+        pdf.setFont('Hanken','bold'); pdf.setFontSize(33); pdf.setTextColor(255,255,255); pdf.text(res.name, pageW/2, ty+13, {align:'center'});
+        pdf.setFont('GeistMono','normal'); pdf.setFontSize(10); pdf.setTextColor(150,146,182); pdf.text('born ' + monthCap + ' ' + res.dayNum, pageW/2, ty+21, {align:'center'});
         pdf.setFontSize(8); pdf.setTextColor(120,116,150);
         pdf.text('nameman.org', mx, pageH-14); pdf.text(genDate ? 'Generated ' + genDate : 'Soular-System™', pageW-mx, pageH-14, {align:'right'});
         // ---- PAGE 2: summary + analytical Soul Star ----
@@ -819,21 +821,8 @@ createApp({
         statBox(mx+(bw+gp)*2,  bw, 'Strongest',  res.ranked[0].digit + ' / ' + res.ranked[0].score);
         statBox(mx+(bw+gp)*3,  bw, 'Weakest',    res.ranked[9].digit + ' / ' + res.ranked[9].score);
         y += 15 + 5;
-        // Soul Star on a dark feature panel (the wheel is designed for dark)
-        {
-          const panelRGB = [14,12,26];                       // #0E0C1A
-          const sIm = await svgToImage(C.starChart(res, {theme:'dark'}), '#0E0C1A');
-          const iw = 96, ih = iw * sIm.aspect, padV = 11, cardH = ih + padV*2;
-          pdf.setFont('helvetica','italic'); pdf.setFontSize(8.6);
-          const dH = pdf.splitTextToSize(D.star, contentW).length*4.1 + 2;
-          if(y > 16 && y + 9 + dH + cardH + 8 > pageH - 14){ pdf.addPage(); y = 16; }
-          heading('Soul Star'); desc(D.star);
-          pdf.setFillColor(panelRGB[0],panelRGB[1],panelRGB[2]); pdf.roundedRect(mx, y, contentW, cardH, 5,5,'F');
-          pdf.setFillColor(74,70,108);
-          [[mx+14,y+12,.5],[mx+contentW-18,y+15,.5],[mx+42,y+cardH-13,.4],[mx+contentW-46,y+cardH-15,.4],[mx+contentW/2,y+9,.4]].forEach(function(p){ pdf.circle(p[0],p[1],p[2],'F'); });
-          pdf.addImage(sIm.data, 'JPEG', mx + (contentW-iw)/2, y + padV, iw, ih);
-          y += cardH + 8;
-        }
+        // Soul Star (light wheel on the paper page)
+        await block('Soul Star', D.star, C.starChart(res, lt), 150, 124);
         // ---- remaining chart sections (heading + description kept with chart) ----
         await block('Soul Compass', D.compass, C.soulCompass(res,lt), 96);
         await block('Talents: Dominant to Subordinant', D.talents, C.rankChart(res,lt), contentW);
@@ -847,25 +836,25 @@ createApp({
         // ---- written reading ----
         keep(46); heading('Written Reading'); desc(D.reading);
         E.reading(res).forEach(function(p){
-          keep(22); pdf.setFont('helvetica','bold'); pdf.setFontSize(10.5); pdf.setTextColor(purple[0],purple[1],purple[2]);
+          keep(22); pdf.setFont('Hanken','bold'); pdf.setFontSize(10.5); pdf.setTextColor(purple[0],purple[1],purple[2]);
           pdf.text(p.title, mx, y); y += 5; pdf.setTextColor(ink[0],ink[1],ink[2]);
           para(p.text, 10); y += 2.5;
         });
         // ---- loves & powers ----
         keep(46); heading('Loves & Powers'); desc(D.loves);
         res.bands.forEach(function(b){
-          keep(14); pdf.setFont('helvetica','bold'); pdf.setFontSize(10); pdf.setTextColor(ink[0],ink[1],ink[2]);
+          keep(14); pdf.setFont('Hanken','bold'); pdf.setFontSize(10); pdf.setTextColor(ink[0],ink[1],ink[2]);
           pdf.text(b.dimension + '  /  ' + b.element + '   (' + b.score + ')', mx, y); y += 4.7;
           para('Loves: ' + b.loves.join(', ') + '      Powers: ' + b.powers.join(', '), 9.5); y += 2;
         });
         // ---- numerology triangle ----
         keep(46); heading('Numerology Triangle (Levels L1 to L12)'); desc(D.triangle);
-        pdf.setFont('courier','normal'); pdf.setFontSize(9); pdf.setTextColor(ink[0],ink[1],ink[2]);
+        pdf.setFont('GeistMono','normal'); pdf.setFontSize(9); pdf.setTextColor(ink[0],ink[1],ink[2]);
         for(let z=1; z<=12; z++){ ensure(4.4); pdf.text('L' + (z<10?' ':'') + z + ':  ' + res.firstLevels[z], mx, y); y += 4.3; }
         y += 3;
         // ---- all data ----
         keep(46); heading('All Data'); desc(D.data);
-        pdf.setFont('courier','normal'); pdf.setFontSize(9);
+        pdf.setFont('GeistMono','normal'); pdf.setFontSize(9);
         ensure(4.6); pdf.setTextColor(122,122,138); pdf.text('digit  count  score  dimension     element', mx, y); y += 4.4;
         pdf.setTextColor(ink[0],ink[1],ink[2]);
         for(let d=0; d<10; d++){
@@ -879,7 +868,7 @@ createApp({
         for(let p=1; p<=total; p++){
           pdf.setPage(p);
           pdf.setDrawColor(line[0],line[1],line[2]); pdf.line(mx, pageH-10, pageW-mx, pageH-10);
-          pdf.setFont('helvetica','normal'); pdf.setFontSize(8); pdf.setTextColor(150,150,162);
+          pdf.setFont('Hanken','normal'); pdf.setFontSize(8); pdf.setTextColor(150,150,162);
           pdf.text('NAMEMAN  ·  ' + res.name.toUpperCase(), mx, pageH-6);
           pdf.text('Page ' + p + ' of ' + total, pageW-mx, pageH-6, {align:'right'});
         }
