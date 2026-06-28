@@ -661,12 +661,23 @@ createApp({
           for(let i=0;i<lines.length;i++){ ensure(4.4); pdf.text(lines[i], mx, y); y += 4.1; }
           y += 2; pdf.setTextColor(ink[0],ink[1],ink[2]);
         }
-        async function chart(svg, maxW){
+        function keep(h){ if(y > 16 && y + h > pageH - 14){ pdf.addPage(); y = 16; } }
+        // a chart section that keeps its heading + description + chart together,
+        // page-breaking before the heading if the whole unit will not fit.
+        async function block(title, dtext, svg, maxW, maxH){
           const im = await svgToImage(svg);
-          const w = Math.min(maxW || contentW, contentW), h = w * im.aspect;
-          ensure(h + 4);
-          pdf.addImage(im.data, 'JPEG', mx + (contentW - w)/2, y, w, h);
-          y += h + 6;
+          let w = Math.min(maxW || contentW, contentW), ih = w * im.aspect;
+          const cap = maxH || 100;                                 // cap height so two sections pair per page
+          if(ih > cap){ const s2 = cap/ih; ih *= s2; w *= s2; }
+          pdf.setFont('helvetica','italic'); pdf.setFontSize(8.6);
+          const dl = pdf.splitTextToSize(dtext, contentW);
+          const headH = 9, descH = dl.length*4.1 + 2;
+          const avail = (pageH - 14) - 16 - headH - descH;         // hard limit: chart space on a fresh page
+          if(ih > avail){ const sc = avail/ih; ih *= sc; w *= sc; }
+          if(y > 16 && y + headH + descH + ih + 8 > pageH - 14){ pdf.addPage(); y = 16; }
+          heading(title); desc(dtext);
+          pdf.addImage(im.data, 'JPEG', mx + (contentW - w)/2, y, w, ih);
+          y += ih + 8;
         }
         function para(text, size){
           pdf.setFont('helvetica','normal'); pdf.setFontSize(size||10); pdf.setTextColor(ink[0],ink[1],ink[2]);
@@ -716,38 +727,40 @@ createApp({
         statBox(mx+(bw+gp)*2,  bw, 'Strongest',  res.ranked[0].digit + ' / ' + res.ranked[0].score);
         statBox(mx+(bw+gp)*3,  bw, 'Weakest',    res.ranked[9].digit + ' / ' + res.ranked[9].score);
         y += 15 + 4;
-        // ---- sections (chart + ported explanation) ----
-        heading('Soul Star');                        desc(D.star);    await chart(C.starChart(res,lt), 118);
-        heading('Soul Compass');                     desc(D.compass); await chart(C.soulCompass(res,lt), 92);
-        heading('Talents: Dominant to Subordinant'); desc(D.talents); await chart(C.rankChart(res,lt), contentW);
-        heading('Elements');                         desc(D.elements);await chart(C.bandChart(res,'element',lt), 150);
-        heading('Dimensions');                       desc(D.dimensions);await chart(C.bandChart(res,'dimension',lt), 150);
-        heading('Scales (0 to 1000)');               desc(D.scales);  await chart(C.scaleChart(res,lt), 150);
-        heading('Year Mandala');                     desc(D.mandala); await chart(C.yearMandala(res,lt), 118);
-        heading('Future Development');               desc(D.future);  await chart(C.pillarChart(res,'year',lt), contentW);
-        heading('Life Path');                        desc(D.life);    await chart(C.lifeStream(res,'year',lt), contentW);
-        heading('Music & the Numerology Circle');    desc(D.music);   await chart(C.musicChart(res,lt), 118);
+        // ---- page 1: a large, prominent Soul Star ----
+        await block('Soul Star', D.star, C.starChart(res,lt), 156, 132);
+        pdf.addPage(); y = 16;                       // Soul Compass starts on page 2
+        // ---- remaining chart sections (heading + description kept with chart) ----
+        await block('Soul Compass', D.compass, C.soulCompass(res,lt), 96);
+        await block('Talents: Dominant to Subordinant', D.talents, C.rankChart(res,lt), contentW);
+        await block('Elements', D.elements, C.bandChart(res,'element',lt), 150);
+        await block('Dimensions', D.dimensions, C.bandChart(res,'dimension',lt), 150);
+        await block('Scales (0 to 1000)', D.scales, C.scaleChart(res,lt), 150);
+        await block('Year Mandala', D.mandala, C.yearMandala(res,lt), 120);
+        await block('Future Development', D.future, C.pillarChart(res,'year',lt), contentW);
+        await block('Life Path', D.life, C.lifeStream(res,'year',lt), contentW);
+        await block('Music & the Numerology Circle', D.music, C.musicChart(res,lt), 120);
         // ---- written reading ----
-        heading('Written Reading'); desc(D.reading);
+        keep(46); heading('Written Reading'); desc(D.reading);
         E.reading(res).forEach(function(p){
-          ensure(8); pdf.setFont('helvetica','bold'); pdf.setFontSize(10.5); pdf.setTextColor(purple[0],purple[1],purple[2]);
+          keep(22); pdf.setFont('helvetica','bold'); pdf.setFontSize(10.5); pdf.setTextColor(purple[0],purple[1],purple[2]);
           pdf.text(p.title, mx, y); y += 5; pdf.setTextColor(ink[0],ink[1],ink[2]);
           para(p.text, 10); y += 2.5;
         });
         // ---- loves & powers ----
-        heading('Loves & Powers'); desc(D.loves);
+        keep(46); heading('Loves & Powers'); desc(D.loves);
         res.bands.forEach(function(b){
-          ensure(10); pdf.setFont('helvetica','bold'); pdf.setFontSize(10); pdf.setTextColor(ink[0],ink[1],ink[2]);
+          keep(14); pdf.setFont('helvetica','bold'); pdf.setFontSize(10); pdf.setTextColor(ink[0],ink[1],ink[2]);
           pdf.text(b.dimension + '  /  ' + b.element + '   (' + b.score + ')', mx, y); y += 4.7;
           para('Loves: ' + b.loves.join(', ') + '      Powers: ' + b.powers.join(', '), 9.5); y += 2;
         });
         // ---- numerology triangle ----
-        heading('Numerology Triangle (Levels L1 to L12)'); desc(D.triangle);
+        keep(46); heading('Numerology Triangle (Levels L1 to L12)'); desc(D.triangle);
         pdf.setFont('courier','normal'); pdf.setFontSize(9); pdf.setTextColor(ink[0],ink[1],ink[2]);
         for(let z=1; z<=12; z++){ ensure(4.4); pdf.text('L' + (z<10?' ':'') + z + ':  ' + res.firstLevels[z], mx, y); y += 4.3; }
         y += 3;
         // ---- all data ----
-        heading('All Data'); desc(D.data);
+        keep(46); heading('All Data'); desc(D.data);
         pdf.setFont('courier','normal'); pdf.setFontSize(9);
         ensure(4.6); pdf.setTextColor(122,122,138); pdf.text('digit  count  score  dimension     element', mx, y); y += 4.4;
         pdf.setTextColor(ink[0],ink[1],ink[2]);
